@@ -2,11 +2,11 @@
   <header class="site-header">
     <div class="container header-container">
       <div class="logo-area">
-        <a href="/" class="logo-link">
+        <router-link to="/" class="logo-link">
           <svg class="logo-svg" viewBox="20 20 160 160" xmlns="http://www.w3.org/2000/svg">
             <path d="M100.002 139.589h-.004L100 140c0 22.091-17.909 40-40 40s-40-17.909-40-40c0-21.953 17.685-39.776 39.586-39.998v-.003C37.685 99.776 20 81.954 20 60c0-22.092 17.909-40 40-40 21.4 0 38.875 16.805 39.948 37.938h.105C101.125 36.805 118.6 20 140 20c22.091 0 40 17.909 40 40 0 21.954-17.687 39.778-39.589 39.998v.003C162.313 100.222 180 118.045 180 140c0 22.091-17.909 40-40 40s-40-17.909-40-40l.002-.411z" fill="#2F5F48"/>
           </svg>
-        </a>
+        </router-link>
         <div class="school-name">
           <h1>Середня загальноосвітня школа № 60 КРД "Росток" м. Києва</h1>
           <p>ім. Олександра Загребельного</p>
@@ -19,12 +19,12 @@
 
       <nav :class="['main-nav', { open: menuOpen }]">
         <ul class="nav-list">
-          <li><a href="#" class="active">Головна</a></li>
+          <li><router-link to="/" :class="{ active: $route.path === '/' }">Головна</router-link></li>
           
           <li class="dropdown" :class="{ open: openDropdown === 'school' }">
-            <a href="#" @click.prevent="toggleDropdown('school')">Про школу</a>
+            <a href="#" @click.prevent="toggleDropdown('school')" :class="{ active: isSchoolActive }">Про школу</a>
             <ul class="dropdown-menu">
-              <li><a href="#">Команда</a></li>
+              <li><router-link to="/team" :class="{ active: $route.path === '/team' }">Команда</router-link></li>
               <li><a href="#">Кафедри</a></li>
               <li><a href="#">Вакансії</a></li>
               <li><a href="#">Правила прийому до 1 класу</a></li>
@@ -59,13 +59,13 @@
             </ul>
           </li>
 
-          <li><a href="#">Харчування</a></li>
+          <li><router-link to="/news">Харчування</router-link></li>
 
           <li class="dropdown" :class="{ open: openDropdown === 'news' }">
-            <a href="#" @click.prevent="toggleDropdown('news')">Новини</a>
+            <a href="#" @click.prevent="toggleDropdown('news')" :class="{ active: isNewsActive }">Новини</a>
             <ul class="dropdown-menu">
-              <li><a href="#">Оголошення</a></li>
-              <li><a href="#">Новини</a></li>
+              <li><router-link to="/announcements" :class="{ active: $route.path === '/announcements' }">Оголошення</router-link></li>
+              <li><router-link to="/news" :class="{ active: $route.path === '/news' }">Новини</router-link></li>
             </ul>
           </li>
 
@@ -91,6 +91,15 @@ export default {
     return {
       menuOpen: false,
       openDropdown: null
+    };
+  },
+  computed: {
+    isSchoolActive() {
+      const schoolRoutes = ['/team']; // додайте інші шляхи, якщо потрібно
+      return schoolRoutes.includes(this.$route.path);
+    },
+    isNewsActive() {
+      return ['/announcements', '/news'].includes(this.$route.path);
     }
   },
   methods: {
@@ -102,10 +111,11 @@ export default {
       }
     }
   }
-}
+};
 </script>
 
 <style scoped>
+/* ===== ВАШІ СТИЛІ (без жодних змін) ===== */
 .site-header {
   background: white;
   border-bottom: 1px solid #e0e0e0;
