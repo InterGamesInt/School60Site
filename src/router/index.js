@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';   // ← використовуйте цей імпорт
 import HomePage from '../views/HomePage.vue';
 import AdminLogin from '../views/AdminLogin.vue';
 import AdminDashboard from '../views/AdminDashboard.vue';
@@ -17,9 +17,9 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHashHistory(),
-  routes: routes // ваші маршрути
-})
+  history: createWebHashHistory(),   // ← має бути саме ця функція
+  routes: routes
+});
 
 router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth) {
