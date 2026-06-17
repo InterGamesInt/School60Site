@@ -17,9 +17,9 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
-  routes
-});
+  history: createWebHashHistory(),
+  routes: routes // ваші маршрути
+})
 
 router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth) {
