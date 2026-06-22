@@ -48,7 +48,9 @@
               class="modal-document-viewport"
               :style="{ '--rt-document-scale': modalDocumentScale, height: modalDocumentViewportHeight }"
             >
-              <div class="modal-description" v-html="sanitizeHtml(selectedEmployee?.description)"></div>
+              <div class="modal-document-page-shell">
+                <div class="modal-description" v-html="sanitizeHtml(selectedEmployee?.description)"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -215,8 +217,14 @@ export default {
       if (!viewport) return;
 
       if (this.modalResizeObserver) this.modalResizeObserver.disconnect();
-      this.modalResizeObserver = new ResizeObserver(this.updateModalDocumentScale);
-      this.modalResizeObserver.observe(viewport);
+
+      this.modalResizeObserver = new ResizeObserver(() => {
+        this.updateModalDocumentScale();
+      });
+
+      const pageShell = viewport.querySelector('.modal-document-page-shell');
+      if (pageShell) this.modalResizeObserver.observe(pageShell);
+
       viewport.addEventListener('load', this.updateModalDocumentScale, true);
       window.addEventListener('resize', this.updateModalDocumentScale);
     },
@@ -224,17 +232,18 @@ export default {
       const viewport = this.$refs.modalDocumentViewport;
       if (!viewport) return;
 
-      const horizontalPadding = 0;
-      const availableWidth = Math.max(0, viewport.clientWidth - horizontalPadding);
-      const scale = Math.min(1, availableWidth / 760);
-      this.modalDocumentScale = Number.isFinite(scale) && scale > 0 ? scale.toFixed(4) : 1;
+      const documentWidth = 760;
+      const availableWidth = Math.max(0, viewport.clientWidth);
+      const scale = Math.min(1, availableWidth / documentWidth);
+      const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+      this.modalDocumentScale = safeScale.toFixed(4);
 
       nextTick(() => {
-        const page = viewport.querySelector('.modal-description');
-        if (!page) return;
+        const pageShell = viewport.querySelector('.modal-document-page-shell');
+        if (!pageShell) return;
 
-        const pageHeight = page.scrollHeight;
-        this.modalDocumentViewportHeight = `${Math.ceil(pageHeight * Number(this.modalDocumentScale))}px`;
+        const pageHeight = pageShell.scrollHeight;
+        this.modalDocumentViewportHeight = `${Math.ceil(pageHeight * safeScale)}px`;
       });
     }
   }
@@ -439,13 +448,28 @@ export default {
   width: 100%;
   overflow: hidden;
 }
-.modal-description {
-  --rt-content-line-height: 28.8px;
+
+/*
+  Опис рендериться як фіксована сторінка 760px, а на малих екранах
+  масштабується цілком. Так браузер не перераховує обтікання зображення
+  під ширину телефона, і результат залишається таким самим, як у редакторі.
+*/
+.modal-document-page-shell {
   width: var(--rt-document-width);
   max-width: none;
   margin: 0 auto;
   transform: scale(var(--rt-document-scale));
   transform-origin: top left;
+}
+
+.modal-description {
+  --rt-content-line-height: 28.8px;
+  width: var(--rt-document-width);
+  max-width: none;
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   font-size: 1rem;
   line-height: 1.8;
   color: #334155;
@@ -454,6 +478,12 @@ export default {
   padding: 24px 28px; /* як у редакторі */
   box-sizing: border-box;
   text-align: left;
+}
+
+.modal-description::after {
+  content: '';
+  display: block;
+  clear: both;
 }
 
 /* ===== СТИЛІ ДЛЯ HTML-КОНТЕНТУ ===== */
@@ -530,14 +560,18 @@ export default {
 
 /* Зображення – обтікання */
 .modal-description :deep(img.align-left:not([data-wrap="false"])) {
+  display: inline !important;
   float: left !important;
+  clear: none !important;
   margin-top: 0 !important;
   margin-right: 1.5rem !important;
   margin-bottom: 1rem !important;
   max-width: 50% !important;
 }
 .modal-description :deep(img.align-right:not([data-wrap="false"])) {
+  display: inline !important;
   float: right !important;
+  clear: none !important;
   margin-top: 0 !important;
   margin-left: 1.5rem !important;
   margin-bottom: 1rem !important;
@@ -610,8 +644,16 @@ export default {
   .modal-position { text-align: center; }
 }
 @media (max-width: 640px) {
-  .modal-container { max-width: 95%; }
-  .modal-content { padding: 24px; }
+  .modal-overlay { padding: 10px; }
+  .modal-container { max-width: 100%; }
+  .modal-content { padding: 20px; }
   .modal-info h2 { font-size: 1.6rem; }
+
+  /* Не змінюємо ширину документа і не вимикаємо float на мобільному. */
+  .modal-document-page-shell,
+  .modal-description {
+    width: var(--rt-document-width);
+    max-width: none;
+  }
 }
 </style>

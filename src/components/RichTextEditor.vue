@@ -1305,6 +1305,9 @@ export default {
   min-height: 280px;
   padding: 24px 28px;
   outline: none;
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   line-height: 1.8;
   color: var(--text-primary);
   font-size: 16px;
