@@ -35,7 +35,6 @@
       </div>
       <div class="form-group">
         <label>Опис</label>
-        <!-- ВИПРАВЛЕНО: використовуємо editData.description -->
         <RichTextEditor v-model="editData.description" placeholder="Введіть біографію, досягнення, контакти..." />
       </div>
       <div class="form-actions">
@@ -52,7 +51,8 @@
         <div class="item-info">
           <h3>{{ item.fullName }}</h3>
           <p class="position">{{ item.position }}</p>
-          <p class="description">{{ item.description }}</p>
+          <!-- Тепер відображаємо HTML з безпечним очищенням та обмеженням висоти -->
+          <div class="description-preview" v-html="sanitizeHtml(item.description)"></div>
         </div>
         <div class="item-actions">
           <button @click="moveUp(idx)" :disabled="idx === 0" class="btn-move" title="Вгору">↑</button>
@@ -66,7 +66,7 @@
       </div>
     </div>
 
-    <!-- Модальне вікно для кропу -->
+    <!-- Модальне вікно для кропу (без змін) -->
     <div v-if="cropperModalVisible" class="modal-overlay" @click.self="closeCropper">
       <div class="cropper-modal">
         <h3>Редагування фото</h3>
@@ -91,10 +91,10 @@
 </template>
 
 <script>
-import { db } from '../../firebase';  // перевірте, чи вірний шлях
+import { db } from '../../firebase';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-// ВИПРАВЛЕНО: правильний шлях до RichTextEditor
 import RichTextEditor from '../RichTextEditor.vue';
+import DOMPurify from 'dompurify';
 
 export default {
   components: { RichTextEditor },
@@ -124,6 +124,16 @@ export default {
     });
   },
   methods: {
+    sanitizeHtml(html) {
+      if (!html) return '';
+      return DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: [
+          'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote',
+          'p', 'br', 'h1', 'h2', 'h3', 'h4', 'span', 'div'
+        ],
+        ALLOWED_ATTR: ['href', 'target', 'src', 'alt', 'class', 'style']
+      });
+    },
     openAddForm() {
       this.editing = false;
       this.editData = { fullName: '', position: '', description: '', photoUrl: '' };
@@ -209,7 +219,7 @@ export default {
         this.selectedFile = new File([blob], 'cropped.jpg', { type: 'image/jpeg' });
         const reader = new FileReader();
         reader.onload = (e) => {
-          this.editData.photoUrl = e.target.result;   // Зберігаємо base64
+          this.editData.photoUrl = e.target.result;
         };
         reader.readAsDataURL(blob);
         this.closeCropper();
@@ -235,9 +245,7 @@ export default {
         return;
       }
       this.saving = true;
-      
       const employeeData = { ...this.editData };
-      
       if (this.editing) {
         await updateDoc(doc(db, 'employees', this.editId), employeeData);
       } else {
@@ -304,25 +312,57 @@ export default {
 </script>
 
 <style scoped>
-/* Основний контейнер */
+/* ============================================
+   БАЗОВІ ЗМІННІ (для консистентності)
+   ============================================ */
+:root {
+  --primary: #2F5F48;
+  --primary-dark: #1e4032;
+  --secondary: #C7613C;
+  --white: #ffffff;
+  --bg: #f9f9f9;
+  --bg-light: #fcfcfc;
+  --light-bg: #fefcf8;
+  --border-color: #e9ecef;
+  --border-color-hover: #e2e8f0;
+  --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.05);
+  --text-primary: #1e293b;
+  --text-secondary: #4a5568;
+  --text-muted: #888;
+  --hover-bg: #f1f5f9;
+  --btn-secondary: #6c757d;
+  --btn-secondary-hover: #565e64;
+  --btn-cancel-bg: #e9ecef;
+  --btn-cancel-hover: #dee2e6;
+  --danger-bg: #f8d7da;
+  --danger-color: #a71d2a;
+}
+
+/* ============================================
+   КОМПОНЕНТ MANAGER
+   ============================================ */
 .manager {
-  background: white;
+  background: var(--white, #ffffff);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-light, 0 1px 3px rgba(0, 0, 0, 0.05));
 }
+
 .manager h2 {
   margin-top: 0;
   margin-bottom: 20px;
-  color: #C7613C;
+  color: var(--secondary, #C7613C);
   font-weight: 600;
   font-size: 1.8rem;
-  border-left: 5px solid #C7613C;
+  border-left: 5px solid var(--secondary, #C7613C);
   padding-left: 16px;
 }
+
 .btn-add {
-  background: #2F5F48;
-  color: white;
+  background: var(--primary, #2F5F48);
+  color: var(--white, #ffffff);
   border: none;
   padding: 10px 20px;
   border-radius: 40px;
@@ -335,24 +375,26 @@ export default {
   gap: 8px;
 }
 .btn-add:hover {
-  background: #1e4032;
+  background: var(--primary-dark, #1e4032);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow, 0 4px 8px rgba(0, 0, 0, 0.1));
 }
+
 .form-card {
-  background: #fefcf8;
+  background: var(--light-bg, #fefcf8);
   padding: 24px;
   border-radius: 20px;
   margin-bottom: 32px;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  border: 1px solid var(--border-color, #e9ecef);
+  box-shadow: var(--shadow, 0 4px 12px rgba(0, 0, 0, 0.04));
 }
 .form-card h3 {
   margin-top: 0;
   margin-bottom: 20px;
   font-size: 1.4rem;
-  color: #2d3e3a;
+  color: var(--text-primary, #2d3e3a);
 }
+
 .form-group {
   margin-bottom: 20px;
 }
@@ -360,22 +402,25 @@ export default {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: #2c3e2f;
+  color: var(--text-primary, #2c3e2f);
   font-size: 0.9rem;
 }
 .form-control {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid #d4d8dd;
+  border: 1px solid var(--border-color, #d4d8dd);
   border-radius: 12px;
   font-size: 1rem;
   transition: 0.2s;
+  background: var(--white, #ffffff) !important;
+  color: var(--text-primary, #1e293b);
 }
 .form-control:focus {
   outline: none;
-  border-color: #C7613C;
-  box-shadow: 0 0 0 3px rgba(199,97,60,0.1);
+  border-color: var(--secondary, #C7613C);
+  box-shadow: 0 0 0 3px rgba(199, 97, 60, 0.1);
 }
+
 .photo-upload-area {
   display: flex;
   flex-direction: column;
@@ -386,16 +431,16 @@ export default {
   height: 130px;
   border-radius: 50%;
   overflow: hidden;
-  background: #f1f3f5;
+  background: var(--hover-bg, #f1f3f5);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px dashed #ced4da;
+  border: 2px dashed var(--border-color, #ced4da);
   transition: all 0.2s;
 }
 .photo-preview:hover {
-  border-color: #2F5F48;
+  border-color: var(--primary, #2F5F48);
   transform: scale(1.02);
 }
 .preview-img {
@@ -405,7 +450,7 @@ export default {
 }
 .preview-placeholder {
   text-align: center;
-  color: #adb5bd;
+  color: var(--text-muted, #adb5bd);
   font-size: 32px;
   display: flex;
   flex-direction: column;
@@ -415,6 +460,7 @@ export default {
   font-size: 11px;
   margin-top: 5px;
 }
+
 .photo-url-row {
   display: flex;
   gap: 12px;
@@ -425,8 +471,8 @@ export default {
   min-width: 180px;
 }
 .btn-crop-url {
-  background: #6c757d;
-  color: white;
+  background: var(--btn-secondary, #6c757d);
+  color: var(--white, #ffffff);
   border: none;
   padding: 0 16px;
   border-radius: 40px;
@@ -435,11 +481,11 @@ export default {
   transition: 0.2s;
 }
 .btn-crop-url:hover:not(:disabled) {
-  background: #565e64;
+  background: var(--btn-secondary-hover, #565e64);
 }
 .btn-remove-photo {
-  background: #f8d7da;
-  color: #a71d2a;
+  background: var(--danger-bg, #f8d7da);
+  color: var(--danger-color, #a71d2a);
   border: none;
   padding: 6px 12px;
   border-radius: 40px;
@@ -448,13 +494,15 @@ export default {
   font-weight: 500;
   width: fit-content;
 }
+
 .form-actions {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
   margin-top: 16px;
 }
-.btn-save, .btn-cancel {
+.btn-save,
+.btn-cancel {
   padding: 10px 24px;
   border-radius: 40px;
   font-weight: 600;
@@ -463,20 +511,21 @@ export default {
   border: none;
 }
 .btn-save {
-  background: #2F5F48;
-  color: white;
+  background: var(--primary, #2F5F48);
+  color: var(--white, #ffffff);
 }
 .btn-save:hover:not(:disabled) {
-  background: #1e4032;
+  background: var(--primary-dark, #1e4032);
   transform: translateY(-1px);
 }
 .btn-cancel {
-  background: #e9ecef;
-  color: #495057;
+  background: var(--btn-cancel-bg, #e9ecef);
+  color: var(--text-secondary, #495057);
 }
 .btn-cancel:hover {
-  background: #dee2e6;
+  background: var(--btn-cancel-hover, #dee2e6);
 }
+
 .items-list {
   display: flex;
   flex-direction: column;
@@ -487,30 +536,32 @@ export default {
   flex-wrap: wrap;
   align-items: center;
   gap: 20px;
-  background: #ffffff;
+  background: var(--white, #ffffff);
   padding: 16px 20px;
   border-radius: 20px;
-  border: 1px solid #edf2f7;
+  border: 1px solid var(--border-color, #edf2f7);
   transition: all 0.2s;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  box-shadow: var(--shadow-light, 0 1px 2px rgba(0, 0, 0, 0.03));
 }
 .item-card:hover {
-  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-  border-color: #e2e8f0;
+  box-shadow: var(--shadow-hover, 0 8px 20px rgba(0, 0, 0, 0.05));
+  border-color: var(--border-color-hover, #e2e8f0);
 }
+
 .item-photo {
   flex-shrink: 0;
   width: 70px;
   height: 70px;
   border-radius: 50%;
   overflow: hidden;
-  background: #e9ecef;
+  background: var(--border-color, #e9ecef);
 }
 .item-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 .item-info {
   flex: 1;
   min-width: 180px;
@@ -519,41 +570,61 @@ export default {
   margin: 0 0 6px 0;
   font-size: 1.2rem;
   font-weight: 700;
-  color: #1e2a3a;
+  color: var(--text-primary, #1e2a3a);
 }
 .position {
-  color: #C7613C;
+  color: var(--secondary, #C7613C);
   font-weight: 600;
   margin: 0 0 8px 0;
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
-.description {
-  color: #4a5568;
+
+/* ===== СТИЛЬ ДЛЯ ПЕРЕГЛЯДУ ОПИСУ ===== */
+.description-preview {
+  color: var(--text-secondary, #4a5568);
   font-size: 0.85rem;
-  line-height: 1.4;
-  margin: 0;
-  max-height: 3.8em;
+  line-height: 1.5;
+  margin: 0 0 8px 0;
+  max-height: 4.5em;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  /* standard property for compatibility */
+  line-clamp: 3;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
 }
-.description ::deep a {
-  color: #C7613C;
-  text-decoration: none;
-}
-.description ::deep img,
-.description ::deep iframe {
+.description-preview img {
   display: none;
 }
+.description-preview ul,
+.description-preview ol {
+  padding-left: 1.2rem;
+  margin: 0.2rem 0;
+}
+.description-preview blockquote {
+  border-left: 4px solid var(--secondary, #C7613C);
+  margin: 0.3rem 0;
+  padding-left: 0.8rem;
+  font-style: italic;
+  color: var(--text-secondary, #555);
+}
+.description-preview a {
+  color: var(--secondary, #C7613C);
+  text-decoration: underline;
+}
+/* ===== КІНЕЦЬ ===== */
+
 .item-actions {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
 }
-.btn-move, .btn-edit, .btn-delete {
+.btn-move,
+.btn-edit,
+.btn-delete {
   background: none;
   border: none;
   font-size: 1.3rem;
@@ -563,8 +634,10 @@ export default {
   transition: all 0.2s;
   opacity: 0.7;
 }
-.btn-move:hover, .btn-edit:hover, .btn-delete:hover {
-  background: #f1f5f9;
+.btn-move:hover,
+.btn-edit:hover,
+.btn-delete:hover {
+  background: var(--hover-bg, #f1f5f9);
   opacity: 1;
   transform: scale(1.05);
 }
@@ -572,14 +645,19 @@ export default {
   opacity: 0.3;
   cursor: not-allowed;
 }
+
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: #8c9aad;
-  background: #fcfcfc;
+  color: var(--text-muted, #8c9aad);
+  background: var(--bg-light, #fcfcfc);
   border-radius: 32px;
   font-style: italic;
 }
+
+/* ============================================
+   АДАПТИВНІСТЬ
+   ============================================ */
 @media (max-width: 700px) {
   .manager {
     padding: 16px;
@@ -598,7 +676,8 @@ export default {
   .form-actions {
     flex-direction: column;
   }
-  .btn-save, .btn-cancel {
+  .btn-save,
+  .btn-cancel {
     width: 100%;
     text-align: center;
   }
@@ -609,7 +688,10 @@ export default {
     padding: 8px;
   }
 }
-/* ===== ОНОВЛЕНІ СТИЛІ КРОПЕРА ===== */
+
+/* ============================================
+   СТИЛІ КРОПЕРА
+   ============================================ */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -627,42 +709,42 @@ export default {
 }
 .cropper-modal {
   position: relative;
-  background: #ffffff;
+  background: var(--white, #ffffff);
   border-radius: 20px;
   padding: 24px;
   width: 70vw;
   height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.15);
-  color: #212529;
-  border: 1px solid #dee2e6;
-  opacity: 1;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  color: var(--text-primary, #212529);
+  border: 1px solid var(--border-color, #dee2e6);
 }
 .cropper-modal h3 {
   margin: 0 0 16px 0;
   text-align: center;
   font-size: 1.5rem;
   font-weight: 600;
-  color: #2F5F48;
+  color: var(--primary, #2F5F48);
 }
 .cropper-container-wrapper {
   width: 100%;
   min-height: 0;
-  background: #f8f9fa;
+  background: var(--bg-light, #f8f9fa);
   border-radius: 16px;
   margin: 8px 0 16px;
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;  
-  border: 1px dashed #ced4da;
+  justify-content: center;
+  border: 1px dashed var(--border-color, #ced4da);
   overflow: hidden;
 }
 .cropper-container-wrapper :deep(.cropper-container) {
   width: 100% !important;
   height: 100% !important;
 }
+
 .cropper-controls {
   display: flex;
   justify-content: center;
@@ -675,8 +757,8 @@ export default {
   align-self: center;
 }
 .ctrl-btn {
-  background: #2F5F48;
-  color: white;
+  background: var(--primary, #2F5F48);
+  color: var(--white, #ffffff);
   border: none;
   width: 44px;
   height: 44px;
@@ -686,15 +768,16 @@ export default {
   transition: all 0.2s;
 }
 .ctrl-btn:hover {
-  background: #C7613C;
+  background: var(--secondary, #C7613C);
   transform: translateY(-2px);
 }
 .ctrl-btn.reset {
-  background: #6c757d;
+  background: var(--btn-secondary, #6c757d);
   width: auto;
   padding: 0 20px;
   font-size: 0.9rem;
 }
+
 .cropper-actions {
   display: flex;
   justify-content: center;
@@ -702,7 +785,8 @@ export default {
   margin-top: 8px;
   flex-shrink: 0;
 }
-.btn-apply, .cropper-actions .btn-cancel {
+.btn-apply,
+.cropper-actions .btn-cancel {
   padding: 10px 28px;
   border-radius: 40px;
   font-weight: bold;
@@ -710,16 +794,20 @@ export default {
   cursor: pointer;
 }
 .btn-apply {
-  background: #2F5F48;
-  color: white;
+  background: var(--primary, #2F5F48);
+  color: var(--white, #ffffff);
 }
 .btn-apply:hover {
-  background: #1e4032;
+  background: var(--primary-dark, #1e4032);
 }
 .cropper-actions .btn-cancel {
-  background: #5a6e6a;
-  color: #eee;
+  background: var(--btn-secondary, #5a6e6a);
+  color: var(--text-light, #eee);
 }
+.cropper-actions .btn-cancel:hover {
+  background: var(--btn-secondary-hover, #4a5a56);
+}
+
 @media (max-width: 640px) {
   .modal-overlay {
     padding: 10px;
@@ -740,7 +828,8 @@ export default {
     padding: 0 12px;
     font-size: 0.8rem;
   }
-  .btn-apply, .cropper-actions .btn-cancel {
+  .btn-apply,
+  .cropper-actions .btn-cancel {
     padding: 8px 20px;
   }
 }

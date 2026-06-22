@@ -27,24 +27,24 @@ export default {
 
 <style scoped>
 .manager {
-  background: white;
+  background: var(--white, #ffffff);
   border-radius: 12px;
   padding: 20px;
 }
 .manager h2 {
   margin-top: 0;
-  color: #C7613C;
+  color: var(--secondary, #C7613C);
   font-weight: 600;
   font-size: 24px;
 }
 .info-box {
-  background: #e8f0fe;
+  background: var(--light-bg, #e8f0fe);
   padding: 20px;
   border-radius: 12px;
-  border-left: 4px solid #2F5F48;
+  border-left: 4px solid var(--primary, #2F5F48);
 }
 .link {
-  color: #C7613C;
+  color: var(--secondary, #C7613C);
   text-decoration: none;
 }
 .link:hover {

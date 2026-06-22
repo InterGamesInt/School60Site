@@ -57,9 +57,11 @@ export default {
 
 <style scoped>
 .admin-dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 30px 20px;
+  width: 100%;
+  padding: 30px 24px;
+  background: var(--bg, #f8fafc);
+  min-height: 70vh;
+  box-sizing: border-box;
 }
 .dashboard-header {
   display: flex;
@@ -67,16 +69,16 @@ export default {
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 2px solid #e0e4e8;
+  border-bottom: 2px solid var(--border, #e0e4e8);
 }
 .dashboard-header h1 {
   font-size: 28px;
-  color: #2F5F48;
+  color: var(--primary, #2F5F48);
   margin: 0;
 }
 .logout-btn {
-  background: #c7613c;
-  color: white;
+  background: var(--secondary, #c7613c);
+  color: var(--white, #ffffff);
   border: none;
   padding: 8px 20px;
   border-radius: 6px;
@@ -84,12 +86,12 @@ export default {
   transition: background 0.2s;
 }
 .logout-btn:hover {
-  background: #a34e2e;
+  background: var(--primary-dark, #a34e2e);
 }
 .tabs {
   display: flex;
   gap: 5px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border, #ddd);
   margin-bottom: 30px;
   flex-wrap: wrap;
 }
@@ -99,18 +101,18 @@ export default {
   padding: 10px 20px;
   font-size: 16px;
   cursor: pointer;
-  color: #555;
+  color: var(--text, #555);
   transition: all 0.2s;
   border-radius: 8px 8px 0 0;
 }
 .tab-btn.active {
-  color: #2F5F48;
-  background: #f0f7ff;
-  border-bottom: 2px solid #C7613C;
+  color: var(--primary, #2F5F48);
+  background: var(--primary-light, #f0f7ff);
+  border-bottom: 2px solid var(--secondary, #C7613C);
   font-weight: bold;
 }
 .tab-btn:hover:not(.active) {
-  color: #C7613C;
-  background: #f5f5f5;
+  color: var(--secondary, #C7613C);
+  background: var(--bg-hover, #f5f5f5);
 }
 </style>
