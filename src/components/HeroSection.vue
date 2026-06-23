@@ -72,11 +72,11 @@
 </template>
 
 <script>
-import hero1 from '@/assets/hero_carusel1.png'
-import hero2 from '@/assets/hero_carusel2.png'
-import hero3 from '@/assets/hero_carusel3.png'
-import hero4 from '@/assets/hero_carusel4.png'
-import hero5 from '@/assets/hero_carusel5.png'
+import hero1 from '../assets/hero_carusel1.png'
+import hero2 from '../assets/hero_carusel2.png'
+import hero3 from '../assets/hero_carusel3.png'
+import hero4 from '../assets/hero_carusel4.png'
+import hero5 from '../assets/hero_carusel5.png'
 
 export default {
   name: 'HeroSection',
