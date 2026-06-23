@@ -3,7 +3,7 @@
     <div class="container header-container">
       <div class="logo-area">
         <router-link to="/" class="logo-link">
-          <img src="/src/assets/logo.png" alt="logo">
+          <img :src="logo" alt="logo">
         </router-link>
         <div class="school-name">
           <h1>Середня загальноосвітня школа № 60 КРД "Росток" м. Києва</h1>
@@ -91,10 +91,13 @@
 </template>
 
 <script>
+import logo from '@/assets/logo.png'
+
 export default {
   name: 'AppHeader',
   data() {
     return {
+      logo,
       menuOpen: false,
       openDropdown: null,
       suppressDropdownHover: false

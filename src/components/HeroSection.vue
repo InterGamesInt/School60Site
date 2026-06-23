@@ -72,6 +72,12 @@
 </template>
 
 <script>
+import hero1 from '@/assets/hero_carusel1.png'
+import hero2 from '@/assets/hero_carusel2.png'
+import hero3 from '@/assets/hero_carusel3.png'
+import hero4 from '@/assets/hero_carusel4.png'
+import hero5 from '@/assets/hero_carusel5.png'
+
 export default {
   name: 'HeroSection',
   data() {
@@ -79,11 +85,11 @@ export default {
       currentIndex: 0,
       intervalId: null,
       images: [
-        { url: 'src/assets/hero_carusel1.png', alt: 'Школа фото 1' },
-        { url: 'src/assets/hero_carusel2.png', alt: 'Школа фото 2' },
-        { url: 'src/assets/hero_carusel3.png', alt: 'Школа фото 3' },
-        { url: 'src/assets/hero_carusel4.png', alt: 'Школа фото 4' },
-        { url: 'src/assets/hero_carusel5.png', alt: 'Школа фото 5' }
+        { url: hero1, alt: 'Школа фото 1' },
+        { url: hero2, alt: 'Школа фото 2' },
+        { url: hero3, alt: 'Школа фото 3' },
+        { url: hero4, alt: 'Школа фото 4' },
+        { url: hero5, alt: 'Школа фото 5' }
       ]
     }
   },
