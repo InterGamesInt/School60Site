@@ -149,7 +149,7 @@ export default {
   height: 300px;
   bottom: -150px;
   left: -50px;
-  background: rgba(199, 97, 60, 0.08);
+  background: var(--decor-secondary, rgba(199, 97, 60, 0.08));
 }
 
 .container {

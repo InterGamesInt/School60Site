@@ -45,7 +45,7 @@ export default {
 .news-page {
   position: relative;
   padding: 80px 0 100px;
-  background: linear-gradient(160deg, var(--news-bg-start, #f0f7f4) 0%, var(--news-bg-end, #e2eee8) 100%);
+  background: linear-gradient(160deg, var(--page-gradient-start, #f0f7f4) 0%, var(--page-gradient-end, #e2eee8) 100%);
   min-height: 70vh;
   overflow: hidden;
 }
@@ -69,21 +69,21 @@ export default {
   height: 500px;
   top: -200px;
   right: -100px;
-  background: radial-gradient(circle, rgba(47, 95, 72, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--decor-primary, rgba(47, 95, 72, 0.06)) 0%, transparent 70%);
 }
 .shape-2 {
   width: 350px;
   height: 350px;
   bottom: -120px;
   left: -80px;
-  background: radial-gradient(circle, rgba(199, 97, 60, 0.05) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--decor-secondary, rgba(199, 97, 60, 0.05)) 0%, transparent 70%);
 }
 .shape-3 {
   width: 200px;
   height: 200px;
   top: 40%;
   left: 50%;
-  background: radial-gradient(circle, rgba(47, 95, 72, 0.03) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--decor-soft, rgba(47, 95, 72, 0.03)) 0%, transparent 70%);
 }
 
 .container {
@@ -105,7 +105,7 @@ export default {
 .page-badge {
   display: inline-block;
   background: var(--primary, #2F5F48);
-  color: #fff;
+  color: var(--on-primary, #fff);
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;

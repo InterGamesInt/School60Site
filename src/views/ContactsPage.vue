@@ -149,7 +149,7 @@ export default {
 .contacts-page {
   position: relative;
   padding: 80px 0 100px;
-  background: linear-gradient(160deg, var(--contacts-bg-start, #f6faf9) 0%, var(--contacts-bg-end, #eaf2ee) 100%);
+  background: linear-gradient(160deg, var(--page-gradient-start, #f6faf9) 0%, var(--page-gradient-end, #eaf2ee) 100%);
   min-height: 70vh;
   overflow: hidden;
 }
@@ -173,21 +173,21 @@ export default {
   height: 500px;
   top: -200px;
   right: -100px;
-  background: radial-gradient(circle, rgba(47, 95, 72, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--decor-primary, rgba(47, 95, 72, 0.06)) 0%, transparent 70%);
 }
 .shape-2 {
   width: 350px;
   height: 350px;
   bottom: -120px;
   left: -80px;
-  background: radial-gradient(circle, rgba(199, 97, 60, 0.05) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--decor-secondary, rgba(199, 97, 60, 0.05)) 0%, transparent 70%);
 }
 .shape-3 {
   width: 200px;
   height: 200px;
   top: 40%;
   left: 50%;
-  background: radial-gradient(circle, rgba(47, 95, 72, 0.03) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--decor-soft, rgba(47, 95, 72, 0.03)) 0%, transparent 70%);
 }
 
 .container {
@@ -209,7 +209,7 @@ export default {
 .page-badge {
   display: inline-block;
   background: var(--primary, #2F5F48);
-  color: #fff;
+  color: var(--on-primary, #fff);
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -263,11 +263,11 @@ export default {
 }
 
 .info-block {
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: var(--card-radius, 20px);
   padding: 24px 28px 28px;
   box-shadow: var(--card-shadow, 0 8px 24px rgba(47, 95, 72, 0.06));
-  border: 1px solid rgba(47, 95, 72, 0.04);
+  border: 1px solid var(--border, rgba(47, 95, 72, 0.04));
   transition: transform var(--transition, 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)),
               box-shadow 0.4s ease,
               border-color 0.3s ease;
@@ -301,7 +301,7 @@ export default {
 .info-block:hover {
   transform: translateY(-4px);
   box-shadow: var(--card-shadow-hover, 0 12px 40px rgba(47, 95, 72, 0.12));
-  border-color: rgba(47, 95, 72, 0.08);
+  border-color: var(--border-strong, rgba(47, 95, 72, 0.08));
 }
 
 .info-block:hover::before {
@@ -359,7 +359,7 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg, #f8fafc);
+  background: var(--surface-muted, #f8fafc);
   padding: 8px 16px 8px 14px;
   border-radius: 40px;
   font-size: 0.9rem;
@@ -377,7 +377,7 @@ export default {
 
 .social-link:hover {
   transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-card, 0 8px 24px rgba(0, 0, 0, 0.08));
 }
 
 .social-link:hover svg {
@@ -423,11 +423,11 @@ export default {
 }
 
 .map-container {
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: var(--card-radius, 20px);
   overflow: hidden;
   box-shadow: var(--card-shadow, 0 8px 24px rgba(47, 95, 72, 0.06));
-  border: 1px solid rgba(47, 95, 72, 0.04);
+  border: 1px solid var(--border, rgba(47, 95, 72, 0.04));
   height: 480px;
   transition: transform var(--transition, 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)),
               box-shadow 0.4s ease,
@@ -438,7 +438,7 @@ export default {
 .map-container:hover {
   transform: translateY(-4px);
   box-shadow: var(--card-shadow-hover, 0 12px 40px rgba(47, 95, 72, 0.12));
-  border-color: rgba(47, 95, 72, 0.08);
+  border-color: var(--border-strong, rgba(47, 95, 72, 0.08));
 }
 
 .map-container iframe {

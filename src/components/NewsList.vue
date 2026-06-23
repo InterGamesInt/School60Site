@@ -130,12 +130,13 @@ export default {
         ALLOWED_TAGS: [
           'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote',
           'p', 'br', 'img', 'h1', 'h2', 'h3', 'h4', 'span', 'div',
-          'iframe', 'video', 'source'
+          'iframe', 'video', 'source', 'pre', 'code', 'hr'
         ],
         ALLOWED_ATTR: [
           'href', 'target', 'src', 'alt', 'class', 'style',
           'width', 'height', 'frameborder', 'allowfullscreen', 'allow',
-          'controls', 'autoplay', 'muted', 'loop'
+          'controls', 'autoplay', 'muted', 'loop',
+          'data-wrap', 'data-text-align'
         ]
       });
     },
@@ -193,7 +194,7 @@ export default {
 .empty-news {
   text-align: center;
   padding: 80px 20px;
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 24px;
   color: var(--text-muted, #8c9aad);
   font-size: 1.2rem;
@@ -213,18 +214,18 @@ export default {
    КАРТКА НОВИНИ
    ============================================ */
 .news-card {
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(47, 95, 72, 0.06);
+  box-shadow: var(--card-shadow, 0 8px 24px rgba(47, 95, 72, 0.06));
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
               box-shadow 0.4s ease;
   overflow: hidden;
-  border: 1px solid rgba(47, 95, 72, 0.04);
+  border: 1px solid var(--border, rgba(47, 95, 72, 0.04));
   cursor: pointer;
 }
 .news-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 16px 40px rgba(47, 95, 72, 0.12);
+  box-shadow: var(--card-shadow-hover, 0 16px 40px rgba(47, 95, 72, 0.12));
 }
 .news-card-inner {
   display: flex;
@@ -237,11 +238,11 @@ export default {
 .news-date-badge {
   flex-shrink: 0;
   width: 64px;
-  background: var(--bg, #f8fafc);
+  background: var(--surface-muted, #f8fafc);
   border-radius: 14px;
   text-align: center;
   padding: 10px 6px;
-  border: 1px solid rgba(47, 95, 72, 0.06);
+  border: 1px solid var(--border, rgba(47, 95, 72, 0.06));
   transition: background 0.3s;
 }
 .news-card:hover .news-date-badge {
@@ -307,7 +308,7 @@ export default {
   padding-left: 0.8rem !important;
   font-style: italic !important;
   color: var(--text-secondary, #555) !important;
-  background: var(--bg, #f8fafc);
+  background: var(--surface-muted, #f8fafc);
   border-radius: 0 8px 8px 0;
 }
 .news-text :deep(a) {
@@ -320,7 +321,7 @@ export default {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  border-top: 1px solid rgba(47, 95, 72, 0.06);
+  border-top: 1px solid var(--border, rgba(47, 95, 72, 0.06));
   padding-top: 14px;
 }
 .news-time {
@@ -352,7 +353,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--overlay, rgba(0, 0, 0, 0.6));
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
@@ -368,14 +369,14 @@ export default {
 }
 
 .modal-container {
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 32px;
   max-width: 720px;
   width: 100%;
   max-height: 85vh;
   overflow-y: auto;
   padding: 40px 44px 48px;
-  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-hover, 0 32px 64px rgba(0, 0, 0, 0.2));
   animation: modalSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
   outline: none;
@@ -394,7 +395,7 @@ export default {
   width: 6px;
 }
 .modal-container::-webkit-scrollbar-track {
-  background: var(--bg, #f1f5f9);
+  background: var(--surface-muted, #f1f5f9);
   border-radius: 3px;
 }
 .modal-container::-webkit-scrollbar-thumb {
@@ -408,7 +409,7 @@ export default {
   top: 0;
   margin-top: -8px;
   margin-right: -8px;
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--surface-muted, rgba(0, 0, 0, 0.04));
   border: none;
   width: 44px;
   height: 44px;
@@ -423,7 +424,7 @@ export default {
 }
 .modal-close:hover {
   background: var(--secondary, #C7613C);
-  color: #fff;
+  color: var(--on-secondary, #fff);
   transform: rotate(90deg);
 }
 .modal-close svg {
@@ -444,7 +445,7 @@ export default {
   font-size: 0.9rem;
   color: var(--text-muted, #8c9aad);
   margin-bottom: 24px;
-  border-bottom: 1px solid rgba(47, 95, 72, 0.06);
+  border-bottom: 1px solid var(--border, rgba(47, 95, 72, 0.06));
   padding-bottom: 16px;
 }
 .modal-body {
@@ -457,12 +458,15 @@ export default {
 }
 .modal-body :deep(blockquote) {
   border-left: 4px solid var(--secondary, #C7613C) !important;
-  margin: 1rem 0 !important;
-  padding-left: 1rem !important;
+  margin: 1.2rem 0 !important;
+  padding: 0.8rem 1.2rem !important;
   font-style: italic !important;
-  color: var(--text-secondary, #475569) !important;
-  background: var(--bg, #f8fafc);
+  color: var(--text-muted, #475569) !important;
+  background: var(--primary-light, #f8fafc);
   border-radius: 0 8px 8px 0;
+}
+.modal-body :deep(blockquote p:last-child) {
+  margin-bottom: 0;
 }
 .modal-body :deep(ul),
 .modal-body :deep(ol) {
@@ -475,6 +479,26 @@ export default {
   border-radius: 12px;
   margin: 16px 0;
 }
+.modal-body :deep(img.align-left:not([data-wrap="false"])) {
+  float: left;
+  margin: 0 1.5rem 1rem 0;
+  max-width: 50% !important;
+}
+.modal-body :deep(img.align-right:not([data-wrap="false"])) {
+  float: right;
+  margin: 0 0 1rem 1.5rem;
+  max-width: 50% !important;
+}
+.modal-body :deep(img.align-center),
+.modal-body :deep(img[data-wrap="false"]) {
+  display: block;
+  float: none;
+  clear: both;
+}
+.modal-body :deep(img.align-center) {
+  margin-left: auto;
+  margin-right: auto;
+}
 .modal-body :deep(a) {
   color: var(--secondary, #C7613C);
   text-decoration: none;
@@ -486,6 +510,38 @@ export default {
   max-width: 100%;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.modal-body :deep(code) {
+  padding: 0.15rem 0.4rem;
+  color: var(--secondary, #C7613C);
+  background: var(--primary-light, #f8fafc);
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.modal-body :deep(pre) {
+  margin: 1rem 0;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  color: var(--code-text, #e2e8f0);
+  background: var(--code-bg, #1e293b);
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+.modal-body :deep(pre code) {
+  padding: 0;
+  color: inherit;
+  background: none;
+  font-size: inherit;
+}
+.modal-body :deep(hr) {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 2px solid var(--border, #e9edf2);
+}
+.modal-body::after {
+  content: '';
+  display: block;
+  clear: both;
 }
 
 /* ============================================

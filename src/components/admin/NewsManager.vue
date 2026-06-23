@@ -13,14 +13,19 @@
       </div>
       <div class="form-group">
         <label>Текст</label>
-        <RichTextEditor v-model="form.content" placeholder="Введіть текст новини..." />
+        <RichTextEditor
+          v-model="form.content"
+          content-label="Текст новини"
+          placeholder="Введіть текст новини..."
+          @limit-change="contentOverLimit = $event.overLimit"
+        />
       </div>
       <div class="form-group">
         <label>Дата та час публікації</label>
         <input type="datetime-local" v-model="form.dateLocal" class="form-control" />
       </div>
       <div class="form-actions">
-        <button @click="saveNews" class="btn-save">Зберегти</button>
+        <button @click="saveNews" class="btn-save" :disabled="contentOverLimit">Зберегти</button>
         <button @click="closeForm" class="btn-cancel">Скасувати</button>
       </div>
     </div>
@@ -58,6 +63,7 @@ export default {
       news: [],
       showForm: false,
       editingId: null,
+      contentOverLimit: false,
       form: {
         title: '',
         content: '',
@@ -85,9 +91,15 @@ export default {
       return DOMPurify.sanitize(html, {
         ALLOWED_TAGS: [
           'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote',
-          'p', 'br', 'h1', 'h2', 'h3', 'h4', 'span', 'div'
+          'p', 'br', 'img', 'h1', 'h2', 'h3', 'h4', 'span', 'div',
+          'iframe', 'video', 'source', 'pre', 'code', 'hr'
         ],
-        ALLOWED_ATTR: ['href', 'target', 'src', 'alt', 'class', 'style']
+        ALLOWED_ATTR: [
+          'href', 'target', 'src', 'alt', 'class', 'style',
+          'width', 'height', 'frameborder', 'allowfullscreen', 'allow',
+          'controls', 'autoplay', 'muted', 'loop',
+          'data-wrap', 'data-text-align'
+        ]
       });
     },
     openAddForm() {
@@ -98,6 +110,7 @@ export default {
     closeForm() {
       this.showForm = false;
       this.editingId = null;
+      this.contentOverLimit = false;
     },
     resetForm() {
       this.form = {
@@ -105,6 +118,7 @@ export default {
         content: '',
         dateLocal: new Date().toISOString().slice(0, 16)
       };
+      this.contentOverLimit = false;
     },
     editNews(item) {
       this.editingId = item.id;
@@ -113,11 +127,16 @@ export default {
         content: item.content || '',
         dateLocal: item.date?.toDate?.()?.toISOString().slice(0, 16) || new Date().toISOString().slice(0, 16)
       };
+      this.contentOverLimit = false;
       this.showForm = true;
     },
     async saveNews() {
       if (!this.form.title.trim()) {
         alert('Введіть заголовок');
+        return;
+      }
+      if (this.contentOverLimit) {
+        alert('Текст новини перевищує безпечний ліміт Firebase.');
         return;
       }
       let dateObj = new Date(this.form.dateLocal);
@@ -139,7 +158,8 @@ export default {
         this.closeForm();
       } catch (err) {
         console.error(err);
-        alert('Помилка збереження');
+        const isSizeError = String(err?.message || '').includes('longer than 1048487 bytes');
+        alert(isSizeError ? 'Текст новини завеликий для Firebase.' : 'Помилка збереження');
       }
     },
     async deleteNews(id) {
@@ -186,7 +206,7 @@ export default {
    КОМПОНЕНТ MANAGER
    ============================================ */
 .manager {
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 16px;
   padding: 24px;
   box-shadow: var(--shadow-light, 0 1px 3px rgba(0, 0, 0, 0.05));
@@ -223,12 +243,12 @@ export default {
 }
 
 .form-card {
-  background: var(--light-bg, #fefcf8);
+  background: var(--surface-soft, #fefcf8);
   padding: 24px;
   border-radius: 20px;
   margin-bottom: 32px;
   border: 1px solid var(--border-color, #e9ecef);
-  box-shadow: var(--shadow, 0 4px 12px rgba(0, 0, 0, 0.04));
+  box-shadow: var(--card-shadow, 0 4px 12px rgba(0, 0, 0, 0.04));
 }
 .form-card h3 {
   margin-top: 0;
@@ -254,13 +274,13 @@ export default {
   border-radius: 12px;
   font-size: 1rem;
   transition: 0.2s;
-  background: var(--white, #ffffff) !important;
+  background: var(--surface, #ffffff) !important;
   color: var(--text-primary, #1e293b);
 }
 .form-control:focus {
   outline: none;
   border-color: var(--secondary, #C7613C);
-  box-shadow: 0 0 0 3px rgba(199, 97, 60, 0.1);
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(199, 97, 60, 0.1));
 }
 
 .form-actions {
@@ -304,7 +324,7 @@ export default {
   flex-wrap: wrap;
   align-items: center;
   gap: 20px;
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   padding: 16px 20px;
   border-radius: 20px;
   border: 1px solid var(--border-color, #edf2f7);
@@ -391,7 +411,7 @@ export default {
   text-align: center;
   padding: 60px 20px;
   color: var(--text-muted, #8c9aad);
-  background: var(--bg-light, #fcfcfc);
+  background: var(--surface-soft, #fcfcfc);
   border-radius: 32px;
   font-style: italic;
 }

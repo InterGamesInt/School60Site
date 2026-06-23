@@ -44,7 +44,12 @@ export default {
 
     const getPreviewStyle = (colors) => {
       return {
-        background: `linear-gradient(135deg, ${colors['--primary']} 50%, ${colors['--secondary']} 50%)`,
+        background: `conic-gradient(
+          ${colors['--primary']} 0 25%,
+          ${colors['--secondary']} 25% 50%,
+          ${colors['--surface']} 50% 75%,
+          ${colors['--page-bg-alt']} 75% 100%
+        )`,
       };
     };
 
@@ -72,7 +77,7 @@ export default {
   height: 48px;
   border-radius: 50%;
   background: var(--primary, #2F5F48);
-  color: var(--white, #FFFFFF);
+  color: var(--on-primary, #FFFFFF);
   border: 2px solid var(--border, rgba(255,255,255,0.2));
   font-size: 24px;
   cursor: pointer;
@@ -96,11 +101,13 @@ export default {
   position: absolute;
   bottom: 64px;
   right: 0;
-  background: var(--white, #FFFFFF);
+  background: var(--surface-elevated, #FFFFFF);
   border-radius: 16px;
   padding: 20px;
-  min-width: 220px;
-  box-shadow: 0 12px 40px var(--shadow, rgba(0,0,0,0.15));
+  width: min(300px, calc(100vw - 32px));
+  max-height: min(70vh, 600px);
+  overflow-y: auto;
+  box-shadow: var(--shadow-hover, 0 12px 40px rgba(0,0,0,0.15));
   border: 1px solid var(--border, #E2E8F0);
   animation: slideUp 0.25s ease;
 }
@@ -127,8 +134,8 @@ export default {
 }
 
 .theme-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -136,7 +143,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
+  padding: 9px 10px;
   border: 2px solid transparent;
   border-radius: 10px;
   cursor: pointer;
@@ -157,8 +164,8 @@ export default {
 }
 
 .theme-preview {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   flex-shrink: 0;
   border: 2px solid var(--border, #E2E8F0);
@@ -187,9 +194,12 @@ export default {
     font-size: 20px;
   }
   .theme-dropdown {
-    min-width: 180px;
+    width: min(280px, calc(100vw - 24px));
     padding: 16px;
     bottom: 56px;
+  }
+  .theme-list {
+    grid-template-columns: 1fr;
   }
 }
 </style>

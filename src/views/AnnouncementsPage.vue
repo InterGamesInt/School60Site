@@ -90,9 +90,15 @@ export default {
       return DOMPurify.sanitize(html, {
         ALLOWED_TAGS: [
           'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote',
-          'p', 'br', 'img', 'h1', 'h2', 'h3', 'h4', 'span', 'div'
+          'p', 'br', 'img', 'h1', 'h2', 'h3', 'h4', 'span', 'div',
+          'iframe', 'video', 'source', 'pre', 'code', 'hr'
         ],
-        ALLOWED_ATTR: ['href', 'target', 'src', 'alt', 'class', 'style']
+        ALLOWED_ATTR: [
+          'href', 'target', 'src', 'alt', 'class', 'style',
+          'width', 'height', 'frameborder', 'allowfullscreen', 'allow',
+          'controls', 'autoplay', 'muted', 'loop',
+          'data-wrap', 'data-text-align'
+        ]
       });
     },
     formatDate(timestamp) {
@@ -129,7 +135,7 @@ export default {
 .announcements-page {
   position: relative;
   padding: 80px 0 100px;
-  background: linear-gradient(160deg, var(--announcement-bg-start, #f6faf9) 0%, var(--announcement-bg-end, #eaf2ee) 100%);
+  background: linear-gradient(160deg, var(--page-gradient-start, #f6faf9) 0%, var(--page-gradient-end, #eaf2ee) 100%);
   min-height: 70vh;
   overflow: hidden;
 }
@@ -153,21 +159,21 @@ export default {
   height: 500px;
   top: -200px;
   right: -100px;
-  background: radial-gradient(circle, rgba(47, 95, 72, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--decor-primary, rgba(47, 95, 72, 0.06)) 0%, transparent 70%);
 }
 .shape-2 {
   width: 350px;
   height: 350px;
   bottom: -120px;
   left: -80px;
-  background: radial-gradient(circle, rgba(199, 97, 60, 0.05) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--decor-secondary, rgba(199, 97, 60, 0.05)) 0%, transparent 70%);
 }
 .shape-3 {
   width: 200px;
   height: 200px;
   top: 40%;
   left: 50%;
-  background: radial-gradient(circle, rgba(47, 95, 72, 0.03) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--decor-soft, rgba(47, 95, 72, 0.03)) 0%, transparent 70%);
 }
 
 .container {
@@ -189,7 +195,7 @@ export default {
 .page-badge {
   display: inline-block;
   background: var(--primary, #2F5F48);
-  color: #fff;
+  color: var(--on-primary, #fff);
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -248,7 +254,7 @@ export default {
 .empty-state {
   text-align: center;
   padding: 80px 20px;
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 24px;
   color: var(--text-muted, #8c9aad);
   font-size: 1.2rem;
@@ -268,11 +274,11 @@ export default {
    КАРТКА
    ============================================ */
 .announcement-card {
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: var(--card-radius, 24px);
   padding: 32px 36px;
   box-shadow: var(--card-shadow, 0 8px 32px rgba(47, 95, 72, 0.08));
-  border: 1px solid rgba(47, 95, 72, 0.04);
+  border: 1px solid var(--border, rgba(47, 95, 72, 0.04));
   transition: transform var(--card-transition, 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)),
               box-shadow 0.4s ease,
               border-color 0.3s ease;
@@ -298,18 +304,18 @@ export default {
 }
 
 .announcement-card.important {
-  background: linear-gradient(145deg, #fffcf8, #fef6f0);
-  border-color: rgba(199, 97, 60, 0.15);
+  background: linear-gradient(145deg, var(--surface-elevated, #fffcf8), var(--important-bg, #fef6f0));
+  border-color: color-mix(in srgb, var(--secondary, #C7613C) 28%, var(--border, transparent));
 }
 .announcement-card.important::before {
   opacity: 1;
-  background: linear-gradient(180deg, var(--secondary, #C7613C) 0%, #a64b2e 100%);
+  background: linear-gradient(180deg, var(--secondary, #C7613C) 0%, var(--secondary-dark, #a64b2e) 100%);
 }
 
 .announcement-card:hover {
   transform: translateY(-6px);
   box-shadow: var(--card-shadow-hover, 0 16px 48px rgba(47, 95, 72, 0.15));
-  border-color: rgba(47, 95, 72, 0.08);
+  border-color: var(--border-strong, rgba(47, 95, 72, 0.08));
 }
 
 /* ============================================
@@ -345,7 +351,7 @@ export default {
   align-items: center;
   gap: 8px;
   background: var(--secondary, #C7613C);
-  color: #fff;
+  color: var(--on-secondary, #fff);
   padding: 4px 14px 4px 10px;
   border-radius: 30px;
   font-size: 0.75rem;
@@ -379,7 +385,7 @@ export default {
   flex-shrink: 0;
   color: var(--text-muted, #8c9aad);
   font-size: 0.85rem;
-  background: var(--bg, #f8fafc);
+  background: var(--surface-muted, #f8fafc);
   padding: 4px 12px;
   border-radius: 30px;
   white-space: nowrap;
@@ -417,12 +423,67 @@ export default {
 }
 .announcement-content :deep(blockquote) {
   border-left: 4px solid var(--secondary, #C7613C);
-  margin: 1rem 0;
-  padding-left: 1rem;
+  margin: 1.2rem 0;
+  padding: 0.8rem 1.2rem;
   font-style: italic;
-  color: var(--text-secondary, #475569);
-  background: var(--bg, #f8fafc);
+  color: var(--text-muted, #475569);
+  background: var(--primary-light, #f8fafc);
   border-radius: 0 8px 8px 0;
+}
+.announcement-content :deep(blockquote p:last-child) {
+  margin-bottom: 0;
+}
+.announcement-content :deep(img.align-left:not([data-wrap="false"])) {
+  float: left;
+  margin: 0 1.5rem 1rem 0;
+  max-width: 50%;
+}
+.announcement-content :deep(img.align-right:not([data-wrap="false"])) {
+  float: right;
+  margin: 0 0 1rem 1.5rem;
+  max-width: 50%;
+}
+.announcement-content :deep(img.align-center),
+.announcement-content :deep(img[data-wrap="false"]) {
+  display: block;
+  float: none;
+  clear: both;
+}
+.announcement-content :deep(img.align-center) {
+  margin-left: auto;
+  margin-right: auto;
+}
+.announcement-content :deep(code) {
+  padding: 0.15rem 0.4rem;
+  color: var(--secondary, #C7613C);
+  background: var(--primary-light, #f8fafc);
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.announcement-content :deep(pre) {
+  margin: 1rem 0;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  color: #e2e8f0;
+  background: #1e293b;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+.announcement-content :deep(pre code) {
+  padding: 0;
+  color: inherit;
+  background: none;
+  font-size: inherit;
+}
+.announcement-content :deep(hr) {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 2px solid var(--border, #e9edf2);
+}
+.announcement-content::after {
+  content: '';
+  display: block;
+  clear: both;
 }
 .announcement-content :deep(a) {
   color: var(--secondary, #C7613C);
@@ -438,7 +499,7 @@ export default {
 .card-footer {
   display: flex;
   justify-content: flex-end;
-  border-top: 1px solid rgba(47, 95, 72, 0.06);
+  border-top: 1px solid var(--border, rgba(47, 95, 72, 0.06));
   padding-top: 16px;
 }
 

@@ -18,7 +18,10 @@
       <!-- Оверлей (затемнення позаду меню) -->
       <div class="nav-overlay" v-show="menuOpen" @click="menuOpen = false"></div>
 
-      <nav :class="['main-nav', { open: menuOpen }]">
+      <nav
+        :class="['main-nav', { open: menuOpen, 'suppress-dropdown-hover': suppressDropdownHover }]"
+        @mouseleave="suppressDropdownHover = false"
+      >
         <button class="close-btn" @click="menuOpen = false" aria-label="Закрити меню">✕</button>
 
         <ul class="nav-list">
@@ -26,7 +29,7 @@
           
           <li class="dropdown" :class="{ open: openDropdown === 'school' }">
             <a href="#" @click.prevent="toggleDropdown('school')" :class="{ active: isSchoolActive }">Про школу</a>
-            <ul class="dropdown-menu">
+            <ul class="dropdown-menu" @click="closeNavigationMenus">
               <li><router-link to="/team" :class="{ active: $route.path === '/team' }" @click="menuOpen = false">Команда</router-link></li>
               <li><a href="#">Кафедри</a></li>
               <li><a href="#">Вакансії</a></li>
@@ -40,7 +43,7 @@
 
           <li class="dropdown" :class="{ open: openDropdown === 'education' }">
             <a href="#" @click.prevent="toggleDropdown('education')">Виховна робота</a>
-            <ul class="dropdown-menu">
+            <ul class="dropdown-menu" @click="closeNavigationMenus">
               <li><a href="#">Шкільне сьогодення</a></li>
               <li><a href="#">Школа без булінгу</a></li>
               <li><a href="#">Практичний психолог</a></li>
@@ -53,7 +56,7 @@
 
           <li class="dropdown" :class="{ open: openDropdown === 'study' }">
             <a href="#" @click.prevent="toggleDropdown('study')">Навчання</a>
-            <ul class="dropdown-menu">
+            <ul class="dropdown-menu" @click="closeNavigationMenus">
               <li><a href="#">Освітні програми 1-4 кл.</a></li>
               <li><a href="#">Освітні програми 5-9 кл.</a></li>
               <li><a href="#">Розклад</a></li>
@@ -66,19 +69,19 @@
 
           <li class="dropdown" :class="{ open: openDropdown === 'news' }">
             <a href="#" @click.prevent="toggleDropdown('news')" :class="{ active: isNewsActive }">Новини</a>
-            <ul class="dropdown-menu">
+            <ul class="dropdown-menu" @click="closeNavigationMenus">
               <li><router-link to="/announcements" :class="{ active: $route.path === '/announcements' }" @click="menuOpen = false">Оголошення</router-link></li>
               <li><router-link to="/news" :class="{ active: $route.path === '/news' }" @click="menuOpen = false">Новини</router-link></li>
             </ul>
           </li>
 
           <li class="dropdown" :class="{ open: openDropdown === 'feedback' }">
-            <a href="#" @click.prevent="toggleDropdown('feedback')">Зворотній зв'язок</a>
-            <ul class="dropdown-menu">
-              <li><router-link to="/contacts" :class="{ active: $route.path === '/contacts' }">Контакти</router-link></li>
-              <li><router-link to="/survey-student" :class="{ active: $route.path === '/survey-student' }">Анкета учня/учениці</router-link></li>
-              <li><router-link to="/survey-parents" :class="{ active: $route.path === '/survey-parents' }">Анкета для батьків</router-link></li>
-              <li><router-link to="/survey-teachers" :class="{ active: $route.path === '/survey-teachers' }">Анкета для вчителів</router-link></li>
+            <a href="#" @click.prevent="toggleDropdown('feedback')" :class="{ active: isFeedbackActive }">Зворотній зв'язок</a>
+            <ul class="dropdown-menu" @click="closeNavigationMenus">
+              <li><router-link to="/contacts" :class="{ active: $route.path === '/contacts' }" @click="menuOpen = false">Контакти</router-link></li>
+              <li><router-link to="/survey-student" :class="{ active: $route.path === '/survey-student' }" @click="menuOpen = false">Анкета учня/учениці</router-link></li>
+              <li><router-link to="/survey-parents" :class="{ active: $route.path === '/survey-parents' }" @click="menuOpen = false">Анкета для батьків</router-link></li>
+              <li><router-link to="/survey-teachers" :class="{ active: $route.path === '/survey-teachers' }" @click="menuOpen = false">Анкета для вчителів</router-link></li>
             </ul>
           </li>
         </ul>
@@ -93,7 +96,8 @@ export default {
   data() {
     return {
       menuOpen: false,
-      openDropdown: null
+      openDropdown: null,
+      suppressDropdownHover: false
     };
   },
   computed: {
@@ -103,15 +107,35 @@ export default {
     },
     isNewsActive() {
       return ['/announcements', '/news'].includes(this.$route.path);
+    },
+    isFeedbackActive() {
+      return ['/contacts', '/survey-student', '/survey-parents', '/survey-teachers'].includes(this.$route.path);
+    }
+  },
+  watch: {
+    '$route.path'() {
+      this.openDropdown = null;
+      this.menuOpen = false;
+      this.$nextTick(() => document.activeElement?.blur());
     }
   },
   methods: {
     toggleDropdown(name) {
+      this.suppressDropdownHover = false;
       if (this.openDropdown === name) {
         this.openDropdown = null;
       } else {
         this.openDropdown = name;
       }
+    },
+    closeNavigationMenus() {
+      this.openDropdown = null;
+      this.menuOpen = false;
+      this.suppressDropdownHover = true;
+      this.$nextTick(() => document.activeElement?.blur());
+      window.setTimeout(() => {
+        this.suppressDropdownHover = false;
+      }, 250);
     }
   }
 };
@@ -146,11 +170,11 @@ export default {
    ОСНОВНІ СТИЛІ ХЕДЕРА
    ============================================ */
 .site-header {
-  background: linear-gradient(135deg, var(--white, #ffffff) 0%, #f4f9f7 100%);
-  border-bottom: none;
+  background: linear-gradient(135deg, var(--header-bg, #ffffff) 0%, var(--header-bg-end, #f4f9f7) 100%);
+  border-bottom: 1px solid color-mix(in srgb, var(--border, #e2e8f0) 70%, transparent);
   padding: 12px 0;
   width: 100%;
-  box-shadow: 0 2px 12px rgba(47, 95, 72, 0.08);
+  box-shadow: var(--shadow-light, 0 2px 12px rgba(47, 95, 72, 0.08));
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -187,11 +211,11 @@ export default {
   flex-shrink: 0;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
   border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(47, 95, 72, 0.15);
+  box-shadow: 0 2px 8px var(--shadow-color, rgba(47, 95, 72, 0.15));
 }
 .logo-link:hover {
   transform: scale(1.08) rotate(-2deg);
-  box-shadow: 0 4px 16px rgba(47, 95, 72, 0.25);
+  box-shadow: 0 4px 16px var(--shadow-strong, rgba(47, 95, 72, 0.25));
 }
 
 .logo-link img {
@@ -200,7 +224,7 @@ export default {
   object-fit: contain;
   display: block;
   border-radius: 50%;
-  background: var(--white, #ffffff);
+  background: var(--header-text, #164851);
   padding: 2px;
 }
 
@@ -216,7 +240,7 @@ export default {
   margin: 0;
   color: var(--primary, #2F5F48);
   letter-spacing: -0.3px;
-  background: linear-gradient(135deg, var(--primary, #2F5F48) 0%, #1a4032 100%);
+  background: linear-gradient(135deg, var(--primary, #2F5F48) 0%, var(--primary-dark, #1a4032) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -368,20 +392,38 @@ export default {
 }
 
 .dropdown-menu {
-  display: none;
+  display: block;
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
   min-width: 240px;
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 16px;
-  box-shadow: 0 16px 48px rgba(47, 95, 72, 0.12);
+  box-shadow: var(--shadow-hover, 0 16px 48px rgba(47, 95, 72, 0.12));
   padding: 8px 0;
   list-style: none;
   z-index: 100;
-  border: 1px solid rgba(47, 95, 72, 0.06);
+  border: 1px solid var(--border, rgba(47, 95, 72, 0.06));
   backdrop-filter: blur(4px);
-  background: rgba(255, 255, 255, 0.98);
+  background: color-mix(in srgb, var(--surface-elevated, #ffffff) 96%, transparent);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px) scale(0.98);
+  transform-origin: top left;
+  transition:
+    opacity 0.2s ease 0.12s,
+    transform 0.2s ease 0.12s,
+    visibility 0s linear 0.32s;
+}
+
+.dropdown-menu::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  height: 10px;
 }
 
 .dropdown-menu li {
@@ -415,8 +457,13 @@ export default {
 
 /* Десктоп: показ при ховері */
 @media (min-width: 769px) {
-  .dropdown:hover .dropdown-menu {
-    display: block;
+  .main-nav:not(.suppress-dropdown-hover) .dropdown:hover .dropdown-menu,
+  .main-nav:not(.suppress-dropdown-hover) .dropdown.open .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+    transition-delay: 0s;
     animation: fadeDropdown 0.25s ease forwards;
   }
   
@@ -501,10 +548,10 @@ export default {
     width: 85%;
     max-width: 360px;
     height: 100vh;
-    background: #ffffff !important;
+    background: var(--surface-elevated, #ffffff) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.08);
+    box-shadow: -8px 0 32px var(--shadow-strong, rgba(0, 0, 0, 0.08));
     transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 80px 24px 30px;
     overflow-y: auto;
@@ -556,6 +603,10 @@ export default {
 
   .dropdown.open .dropdown-menu {
     display: block;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
   }
 
   .dropdown-menu a {

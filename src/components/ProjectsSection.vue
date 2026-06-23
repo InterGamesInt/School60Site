@@ -25,7 +25,7 @@ export default {
 <style scoped>
 .projects {
   padding: 60px 0;
-  background: var(--bg, #f0f7ff);
+  background: var(--section-bg-alt, #f0f7ff);
 }
 .section-title {
   font-size: 38px;
@@ -36,10 +36,11 @@ export default {
 .project-card {
   display: flex;
   flex-wrap: wrap;
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 20px var(--shadow, rgba(0,0,0,0.1));
+  box-shadow: var(--card-shadow, 0 8px 20px rgba(0,0,0,0.1));
+  border: 1px solid var(--border, transparent);
   max-width: 800px;
   margin: 0 auto;
 }
@@ -73,7 +74,7 @@ export default {
 .btn {
   display: inline-block;
   background: var(--primary, #2F5F48);
-  color: var(--white, #ffffff);
+  color: var(--on-primary, #ffffff);
   padding: 12px 24px;
   text-decoration: none;
   border-radius: 8px;

@@ -32,7 +32,7 @@ export default {
 <style scoped>
 .survey-page {
   padding: 60px 0;
-  background: var(--bg, #f8fafc);
+  background: linear-gradient(160deg, var(--page-gradient-start, #f8fafc), var(--page-gradient-end, #eef2f5));
   min-height: 70vh;
 }
 .container {
@@ -67,10 +67,11 @@ export default {
   line-height: 1.6;
 }
 .survey-container {
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 12px var(--shadow, rgba(0,0,0,0.05));
+  box-shadow: var(--card-shadow, 0 4px 12px rgba(0,0,0,0.05));
+  border: 1px solid var(--border, transparent);
 }
 .survey-container iframe {
   display: block;

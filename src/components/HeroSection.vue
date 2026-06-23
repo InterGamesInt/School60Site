@@ -140,7 +140,7 @@ export default {
 .hero {
   position: relative;
   padding: 80px 0 100px;
-  background: linear-gradient(145deg, var(--gradient-start, #f0f7f4), var(--gradient-end, #e2eee8));
+  background: linear-gradient(145deg, var(--hero-bg-start, #f0f7f4), var(--hero-bg-end, #e2eee8));
   overflow: hidden;
 }
 
@@ -157,7 +157,7 @@ export default {
 .circle {
   position: absolute;
   border-radius: 50%;
-  background: rgba(47, 95, 72, 0.04);
+  background: var(--decor-primary, rgba(47, 95, 72, 0.04));
 }
 .circle-1 {
   width: 500px;
@@ -170,14 +170,14 @@ export default {
   height: 300px;
   bottom: -80px;
   left: -60px;
-  background: rgba(199, 97, 60, 0.05);
+  background: var(--decor-secondary, rgba(199, 97, 60, 0.05));
 }
 .circle-3 {
   width: 200px;
   height: 200px;
   top: 40%;
   left: 50%;
-  background: rgba(47, 95, 72, 0.03);
+  background: var(--decor-soft, rgba(47, 95, 72, 0.03));
 }
 
 .container {
@@ -216,7 +216,7 @@ export default {
 
 .hero-text h2 .highlight {
   font-size: 2.6rem;
-  background: linear-gradient(135deg, var(--primary, #2F5F48) 0%, #1a4032 100%);
+  background: linear-gradient(135deg, var(--primary, #2F5F48) 0%, var(--primary-dark, #1a4032) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -244,19 +244,19 @@ export default {
 .hero-cta .btn-primary {
   display: inline-block;
   background: var(--primary, #2F5F48);
-  color: #fff;
+  color: var(--on-primary, #fff);
   padding: 14px 36px;
   border-radius: 40px;
   font-weight: 600;
   font-size: 1rem;
   text-decoration: none;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(47, 95, 72, 0.25);
+  box-shadow: 0 4px 12px var(--shadow-strong, rgba(47, 95, 72, 0.25));
 }
 .hero-cta .btn-primary:hover {
   background: var(--primary-dark, #1e4032);
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(47, 95, 72, 0.35);
+  box-shadow: var(--shadow-hover, 0 8px 24px rgba(47, 95, 72, 0.35));
 }
 
 /* ============================================
@@ -268,8 +268,8 @@ export default {
   position: relative;
   border-radius: 24px;
   overflow: hidden;
-  box-shadow: var(--carousel-shadow, 0 20px 60px rgba(47, 95, 72, 0.20));
-  background: var(--white, #ffffff);
+  box-shadow: var(--shadow-hover, 0 20px 60px rgba(47, 95, 72, 0.20));
+  background: var(--surface, #ffffff);
   transition: transform 0.3s ease;
 }
 .hero-carousel:hover {

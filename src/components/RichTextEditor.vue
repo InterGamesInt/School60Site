@@ -312,6 +312,23 @@
       </div>
     </div>
 
+    <div
+      v-if="maxBytes > 0"
+      class="content-size"
+      :class="{ 'is-warning': isNearLimit, 'is-over-limit': isOverLimit }"
+      role="status"
+      aria-live="polite"
+    >
+      <span>
+        {{ isOverLimit
+          ? 'Перевищено безпечний ліміт Firebase. Видаліть частину тексту або зображень.'
+          : isNearLimit
+            ? `${contentLabel} наближається до ліміту Firebase.`
+            : `Обсяг: ${contentLabel.toLowerCase()}` }}
+      </span>
+      <strong>{{ formatBytes(contentBytes) }} / {{ formatBytes(maxBytes) }}</strong>
+    </div>
+
     <!-- Діалог зображення -->
     <div v-if="imageDialogVisible" class="dialog-overlay" @click.self="closeImageDialog">
       <div class="dialog">
@@ -368,7 +385,10 @@
           </div>
           <div v-if="uploadPreview" class="upload-preview">
             <img :src="uploadPreview" alt="Preview" />
-            <button class="btn-primary" @click="insertBase64Image">Вставити</button>
+            <p v-if="uploadInfo" class="upload-info">{{ uploadInfo }}</p>
+            <button class="btn-primary" @click="insertBase64Image" :disabled="loadingImage">
+              {{ loadingImage ? 'Опрацювання...' : 'Вставити' }}
+            </button>
           </div>
         </div>
 
@@ -538,9 +558,12 @@ export default {
   components: { EditorContent },
   props: {
     modelValue: { type: String, default: '' },
-    placeholder: { type: String, default: 'Розпочніть писати...' }
+    placeholder: { type: String, default: 'Розпочніть писати...' },
+    contentLabel: { type: String, default: 'Вміст' },
+    maxBytes: { type: Number, default: 1048000 },
+    warningThreshold: { type: Number, default: 0.85 }
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'limit-change'],
   setup(props, { emit }) {
     const fontSizeSelect = ref(null)
     const fontFamilySelect = ref(null)
@@ -550,6 +573,9 @@ export default {
     const editorViewport = ref(null)
     const documentScale = ref(1)
     const documentViewportHeight = ref('auto')
+    const contentBytes = ref(new TextEncoder().encode(props.modelValue || '').length)
+    const isNearLimit = ref(false)
+    const isOverLimit = ref(false)
     let resizeObserver = null
     let scaleFrame = null
 
@@ -561,6 +587,24 @@ export default {
     function scheduleDocumentScaleUpdate() {
       if (scaleFrame) cancelAnimationFrame(scaleFrame)
       scaleFrame = requestAnimationFrame(updateDocumentScale)
+    }
+
+    function updateContentSize(html) {
+      contentBytes.value = new TextEncoder().encode(html || '').length
+      isNearLimit.value = props.maxBytes > 0 && contentBytes.value >= props.maxBytes * props.warningThreshold
+      isOverLimit.value = props.maxBytes > 0 && contentBytes.value > props.maxBytes
+      emit('limit-change', {
+        bytes: contentBytes.value,
+        maxBytes: props.maxBytes,
+        nearLimit: isNearLimit.value,
+        overLimit: isOverLimit.value
+      })
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return `${bytes} Б`
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`
+      return `${(bytes / (1024 * 1024)).toFixed(2)} МБ`
     }
 
     function updateDocumentScale() {
@@ -579,8 +623,11 @@ export default {
         const viewportStyles = window.getComputedStyle(viewport)
         const paddingTop = parseFloat(viewportStyles.paddingTop) || 0
         const paddingBottom = parseFloat(viewportStyles.paddingBottom) || 0
-        const pageHeight = page.scrollHeight
-        documentViewportHeight.value = `${Math.ceil(pageHeight * Number(documentScale.value) + paddingTop + paddingBottom)}px`
+        const pageHeight = Math.max(page.scrollHeight, page.offsetHeight)
+        const nextHeight = `${Math.ceil(pageHeight * Number(documentScale.value) + paddingTop + paddingBottom)}px`
+        if (documentViewportHeight.value !== nextHeight) {
+          documentViewportHeight.value = nextHeight
+        }
       })
     }
 
@@ -593,8 +640,6 @@ export default {
           link: false,
           underline: false,
           strike: false,
-          codeBlock: false,   // ми додамо окремо, але можна лишити
-          horizontalRule: false, // ми додамо окремо
         }),
         Link.configure({
           openOnClick: false,
@@ -602,7 +647,9 @@ export default {
         }),
         Underline,
         Strike,
-        CustomImage,
+        CustomImage.configure({
+          allowBase64: true
+        }),
         CustomVideo,
         FontSize,
         FontFamily,
@@ -614,7 +661,9 @@ export default {
         Placeholder.configure({ placeholder: props.placeholder })
       ],
       onUpdate: ({ editor }) => {
-        emit('update:modelValue', editor.getHTML())
+        const html = editor.getHTML()
+        emit('update:modelValue', html)
+        updateContentSize(html)
         updateToolbar()
         scheduleDocumentScaleUpdate()
       },
@@ -701,7 +750,7 @@ export default {
     const setFontSize = (size) => {
       if (!editor.value) return
       if (!size) {
-        editor.value.chain().focus().unsetMark('textStyle').run()
+        editor.value.chain().focus().setMark('textStyle', { fontSize: null }).run()
         return
       }
       editor.value.chain().focus().setMark('textStyle', { fontSize: size }).run()
@@ -711,7 +760,7 @@ export default {
     const setFontFamily = (family) => {
       if (!editor.value) return
       if (!family) {
-        editor.value.chain().focus().unsetMark('textStyle').run()
+        editor.value.chain().focus().unsetFontFamily().run()
         return
       }
       editor.value.chain().focus().setFontFamily(family).run()
@@ -720,13 +769,22 @@ export default {
 
     const setTextAlign = (alignment) => {
       if (!editor.value) return
+      const { state } = editor.value
+      const storedMarks = state.storedMarks || state.selection.$from.marks()
+      const restoreStoredMarks = ({ tr }) => {
+        if (state.selection.empty && storedMarks?.length) {
+          tr.setStoredMarks(storedMarks)
+        }
+        return true
+      }
       if (editor.value.isActive('image')) {
         editor.value.chain().focus().updateAttributes('image', { textAlign: alignment }).run()
       } else if (editor.value.isActive('video')) {
         editor.value.chain().focus().updateAttributes('video', { textAlign: alignment }).run()
       } else {
-        editor.value.chain().focus().setTextAlign(alignment).run()
+        editor.value.chain().focus().setTextAlign(alignment).command(restoreStoredMarks).run()
       }
+      setTimeout(updateToolbar, 0)
     }
 
     const setColor = (color) => {
@@ -760,6 +818,7 @@ export default {
     const imageUrl = ref('')
     const localFileInput = ref(null)
     const uploadPreview = ref(null)
+    const uploadInfo = ref('')
     const loadingImage = ref(false)
     let pendingBase64 = null
     const editingImage = ref(false)
@@ -788,6 +847,7 @@ export default {
       widthUnit.value = 'px'
       heightUnit.value = 'px'
       uploadPreview.value = null
+      uploadInfo.value = ''
       pendingBase64 = null
       imageDialogVisible.value = true
     }
@@ -885,30 +945,101 @@ export default {
       }
     }
 
-    const handleLocalImageUpload = (event) => {
-      const file = event.target.files[0]
+    const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+
+    const canvasToBlob = (canvas, type, quality) => new Promise((resolve) => {
+      canvas.toBlob(resolve, type, quality)
+    })
+
+    const prepareLocalImage = async (file) => {
+      loadingImage.value = true
+      uploadInfo.value = 'Оптимізація зображення...'
+      try {
+        const skipCompression = /image\/(gif|svg\+xml)/.test(file.type)
+        if (skipCompression) {
+          const dataUrl = await readFileAsDataUrl(file)
+          return { dataUrl, originalBytes: file.size, resultBytes: file.size, compressed: false }
+        }
+
+        const bitmap = await createImageBitmap(file)
+        const maxDimension = 1600
+        const targetBytes = 300 * 1024
+        const initialScale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height))
+
+        if (file.size <= targetBytes && initialScale === 1) {
+          bitmap.close()
+          const dataUrl = await readFileAsDataUrl(file)
+          return { dataUrl, originalBytes: file.size, resultBytes: file.size, compressed: false }
+        }
+
+        let width = Math.max(1, Math.round(bitmap.width * initialScale))
+        let height = Math.max(1, Math.round(bitmap.height * initialScale))
+        let quality = 0.86
+        let blob = null
+
+        for (let attempt = 0; attempt < 7; attempt += 1) {
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          const context = canvas.getContext('2d', { alpha: true })
+          context.imageSmoothingEnabled = true
+          context.imageSmoothingQuality = 'high'
+          context.drawImage(bitmap, 0, 0, width, height)
+          blob = await canvasToBlob(canvas, 'image/webp', quality)
+          if (blob && blob.size <= targetBytes) break
+          quality = Math.max(0.68, quality - 0.04)
+          if (attempt >= 3) {
+            width = Math.max(720, Math.round(width * 0.88))
+            height = Math.max(480, Math.round(height * 0.88))
+          }
+        }
+
+        bitmap.close()
+        if (!blob) {
+          const dataUrl = await readFileAsDataUrl(file)
+          return { dataUrl, originalBytes: file.size, resultBytes: file.size, compressed: false }
+        }
+
+        return {
+          dataUrl: await readFileAsDataUrl(blob),
+          originalBytes: file.size,
+          resultBytes: blob.size,
+          compressed: blob.size < file.size
+        }
+      } catch (error) {
+        console.warn('Не вдалося стиснути зображення, використовується оригінал.', error)
+        const dataUrl = await readFileAsDataUrl(file)
+        return { dataUrl, originalBytes: file.size, resultBytes: file.size, compressed: false }
+      } finally {
+        loadingImage.value = false
+      }
+    }
+
+    const setPendingLocalImage = async (file) => {
       if (!file || !file.type.startsWith('image/')) {
         alert('Оберіть зображення')
         return
       }
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        uploadPreview.value = e.target.result
-        pendingBase64 = e.target.result
-      }
-      reader.readAsDataURL(file)
+      const result = await prepareLocalImage(file)
+      uploadPreview.value = result.dataUrl
+      pendingBase64 = result.dataUrl
+      uploadInfo.value = result.compressed
+        ? `Зменшено: ${formatBytes(result.originalBytes)} → ${formatBytes(result.resultBytes)}`
+        : `Розмір: ${formatBytes(result.resultBytes)}`
     }
 
-    const handleLocalDrop = (e) => {
+    const handleLocalImageUpload = async (event) => {
+      await setPendingLocalImage(event.target.files[0])
+    }
+
+    const handleLocalDrop = async (e) => {
       const file = e.dataTransfer.files[0]
-      if (file && file.type.startsWith('image/')) {
-        const reader = new FileReader()
-        reader.onload = (ev) => {
-          uploadPreview.value = ev.target.result
-          pendingBase64 = ev.target.result
-        }
-        reader.readAsDataURL(file)
-      }
+      await setPendingLocalImage(file)
     }
 
     const insertBase64Image = () => {
@@ -930,6 +1061,7 @@ export default {
       editingImage.value = false
       currentImageNode = null
       uploadPreview.value = null
+      uploadInfo.value = ''
       pendingBase64 = null
     }
 
@@ -979,19 +1111,13 @@ export default {
     // ============================================================
     // DRAG & DROP НА РЕДАКТОР
     // ============================================================
-    const handleDrop = (e) => {
+    const handleDrop = async (e) => {
       isDragOver.value = false
       const files = e.dataTransfer.files
       if (files.length > 0 && files[0].type.startsWith('image/')) {
         openImageDialog()
         activeTab.value = 'upload'
-        const file = files[0]
-        const reader = new FileReader()
-        reader.onload = (ev) => {
-          uploadPreview.value = ev.target.result
-          pendingBase64 = ev.target.result
-        }
-        reader.readAsDataURL(file)
+        await setPendingLocalImage(files[0])
       }
     }
 
@@ -1004,6 +1130,7 @@ export default {
         const isSame = editor.value?.getHTML() === newVal
         if (!isSame && newVal !== undefined) {
           editor.value?.commands.setContent(newVal, false)
+          updateContentSize(newVal)
           nextTick(scheduleDocumentScaleUpdate)
         }
       }
@@ -1020,9 +1147,12 @@ export default {
       if (viewport) {
         resizeObserver = new ResizeObserver(scheduleDocumentScaleUpdate)
         resizeObserver.observe(viewport)
+        const page = viewport.querySelector('.ProseMirror')
+        if (page) resizeObserver.observe(page)
         viewport.addEventListener('load', scheduleDocumentScaleUpdate, true)
       }
       window.addEventListener('resize', scheduleDocumentScaleUpdate)
+      updateContentSize(props.modelValue)
       nextTick(scheduleDocumentScaleUpdate)
     })
 
@@ -1047,6 +1177,11 @@ export default {
       editorViewport,
       documentScale,
       documentViewportHeight,
+      contentBytes,
+      isNearLimit,
+      isOverLimit,
+      maxBytes: props.maxBytes,
+      formatBytes,
       getImageWrap,
       toggleWrap,
       clearFormatting,
@@ -1061,6 +1196,7 @@ export default {
       imageUrl,
       localFileInput,
       uploadPreview,
+      uploadInfo,
       loadingImage,
       imageWidth,
       imageHeight,
@@ -1110,10 +1246,19 @@ export default {
 .rich-text-editor {
   --rt-document-width: 760px;
   --rt-document-scale: 1;
+  --editor-shadow: var(--shadow-light, 0 2px 12px rgba(47, 95, 72, 0.06));
+  --editor-shadow-focus: var(--shadow-card, 0 4px 20px rgba(47, 95, 72, 0.10));
+  --toolbar-bg: var(--surface-muted, #f8fafc);
+  --toolbar-border: var(--border, #e9edf2);
+  --btn-bg: var(--surface, #ffffff);
+  --btn-border: var(--border-strong, #d1d9e0);
+  --btn-hover: var(--surface-accent, #f1f5f9);
+  --btn-active: var(--secondary, #C7613C);
+  --btn-active-text: var(--on-secondary, #ffffff);
   border: 1.5px solid var(--toolbar-border);
   border-radius: var(--editor-radius);
   overflow: hidden;
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   box-shadow: var(--editor-shadow);
   transition: border-color var(--transition), box-shadow var(--transition);
 }
@@ -1168,7 +1313,7 @@ export default {
 .tool-btn.is-active {
   background: var(--btn-active);
   color: var(--btn-active-text);
-  box-shadow: 0 2px 8px rgba(199, 97, 60, 0.25);
+  box-shadow: 0 2px 8px var(--shadow-strong, rgba(199, 97, 60, 0.25));
 }
 .tool-btn:disabled {
   opacity: 0.35;
@@ -1181,7 +1326,7 @@ export default {
 }
 
 .tool-select {
-  background: var(--white, #ffffff);
+  background: var(--surface, #ffffff);
   border: 1px solid var(--btn-border);
   border-radius: 8px;
   padding: 4px 8px;
@@ -1196,7 +1341,7 @@ export default {
 .tool-select:hover { border-color: var(--text-muted); }
 .tool-select:focus {
   border-color: var(--btn-active);
-  box-shadow: 0 0 0 3px rgba(199, 97, 60, 0.12);
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(199, 97, 60, 0.12));
 }
 
 /* ===== КОЛІР ===== */
@@ -1261,7 +1406,7 @@ export default {
 .editor-drop-zone {
   position: relative;
   transition: background var(--transition);
-  background: #f1f5f9;
+  background: var(--surface-muted, #f1f5f9);
 }
 .editor-content {
   display: block;
@@ -1278,7 +1423,7 @@ export default {
   transform-origin: top left;
 }
 .editor-drop-zone.is-dragover {
-  background: rgba(199, 97, 60, 0.04);
+  background: color-mix(in srgb, var(--secondary, #C7613C) 5%, var(--surface-muted, #f1f5f9));
 }
 .drop-overlay {
   position: absolute;
@@ -1286,7 +1431,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(199, 97, 60, 0.08);
+  background: color-mix(in srgb, var(--secondary, #C7613C) 10%, transparent);
   backdrop-filter: blur(2px);
   font-size: 1.2rem;
   font-weight: 600;
@@ -1298,6 +1443,7 @@ export default {
 
 .editor-content :deep(.ProseMirror) {
   --rt-content-line-height: 28.8px;
+  display: flow-root;
   width: var(--rt-document-width);
   max-width: none;
   box-sizing: border-box;
@@ -1311,9 +1457,14 @@ export default {
   line-height: 1.8;
   color: var(--text-primary);
   font-size: 16px;
-  background: var(--white, #ffffff);
+  background: var(--surface, #ffffff);
   border-radius: 4px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-card, 0 8px 24px rgba(15, 23, 42, 0.08));
+}
+.editor-content :deep(.ProseMirror::after) {
+  content: '';
+  display: block;
+  clear: both;
 }
 .editor-content :deep(.ProseMirror p) {
   margin: 0 0 0.5em 0;
@@ -1331,13 +1482,16 @@ export default {
   margin: 0.5rem 0;
 }
 .editor-content :deep(.ProseMirror blockquote) {
-  border-left: 4px solid var(--btn-active);
+  border-left: 4px solid var(--secondary, #C7613C);
   margin: 1.2rem 0;
   padding: 0.8rem 1.2rem;
-  color: var(--text-secondary);
+  color: var(--text-muted, #475569);
   font-style: italic;
-  background: var(--toolbar-bg);
+  background: var(--primary-light, #f8fafc);
   border-radius: 0 8px 8px 0;
+}
+.editor-content :deep(.ProseMirror blockquote p:last-child) {
+  margin-bottom: 0;
 }
 .editor-content :deep(.ProseMirror a) {
   color: var(--btn-active);
@@ -1364,8 +1518,8 @@ export default {
   color: var(--btn-active);
 }
 .editor-content :deep(.ProseMirror pre) {
-  background: #1e293b;
-  color: #e2e8f0;
+  background: var(--code-bg, #1e293b);
+  color: var(--code-text, #e2e8f0);
   padding: 1rem 1.2rem;
   border-radius: 12px;
   overflow-x: auto;
@@ -1380,8 +1534,44 @@ export default {
 }
 .editor-content :deep(.ProseMirror hr) {
   border: none;
-  border-top: 2px solid var(--toolbar-border);
+  border-top: 2px solid var(--border, #e9edf2);
   margin: 1.5rem 0;
+}
+
+.content-size {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 14px;
+  color: var(--text-muted, #64748b);
+  background: var(--surface-elevated, #ffffff);
+  border-top: 1px solid var(--toolbar-border);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.content-size strong {
+  flex-shrink: 0;
+  color: var(--text, #334155);
+}
+
+.content-size.is-warning {
+  color: #8a5a00;
+  background: #fff8e6;
+}
+
+.content-size.is-warning strong {
+  color: #8a5a00;
+}
+
+.content-size.is-over-limit {
+  color: #a12622;
+  background: #fff1f0;
+  border-top-color: #f2b8b5;
+}
+
+.content-size.is-over-limit strong {
+  color: #a12622;
 }
 
 /* ===== ВИРІВНЮВАННЯ ЗОБРАЖЕНЬ ===== */
@@ -1455,13 +1645,13 @@ export default {
   padding: 20px;
 }
 .dialog {
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 28px;
   padding: 32px 36px 28px;
   width: 100%;
   max-width: 540px;
   position: relative;
-  box-shadow: 0 32px 64px rgba(0,0,0,0.18);
+  box-shadow: var(--shadow-hover, 0 32px 64px rgba(0,0,0,0.18));
   animation: dialogFade 0.25s ease;
 }
 @keyframes dialogFade {
@@ -1527,13 +1717,13 @@ export default {
   border-radius: 12px;
   font-size: 15px;
   transition: border-color var(--transition), box-shadow var(--transition);
-  background: var(--white, #ffffff);
+  background: var(--surface, #ffffff);
   color: var(--text-primary);
 }
 .dialog-input:focus {
   outline: none;
   border-color: var(--btn-active);
-  box-shadow: 0 0 0 3px rgba(199,97,60,0.12);
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(199,97,60,0.12));
 }
 .dialog-hint {
   font-size: 0.85rem;
@@ -1547,7 +1737,7 @@ export default {
 }
 .btn-primary {
   background: var(--primary, #2F5F48);
-  color: var(--white, #ffffff);
+  color: var(--on-primary, #ffffff);
   border: none;
   padding: 10px 24px;
   border-radius: 40px;
@@ -1559,7 +1749,7 @@ export default {
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-dark, #1e4032);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(47,95,72,0.25);
+  box-shadow: 0 6px 16px var(--shadow-strong, rgba(47,95,72,0.25));
 }
 .btn-primary:disabled {
   opacity: 0.5;
@@ -1605,7 +1795,7 @@ export default {
   border: 1.5px solid var(--btn-border);
   border-radius: 8px;
   font-size: 14px;
-  background: var(--white, #ffffff);
+  background: var(--surface, #ffffff);
   color: var(--text-primary);
 }
 .size-input:focus {
@@ -1616,7 +1806,7 @@ export default {
   padding: 8px 4px;
   border: 1.5px solid var(--btn-border);
   border-radius: 8px;
-  background: var(--white, #ffffff);
+  background: var(--surface, #ffffff);
   font-size: 13px;
   color: var(--text-primary);
 }
@@ -1661,6 +1851,11 @@ export default {
   border-radius: 12px;
   margin-bottom: 14px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.upload-info {
+  margin: -4px 0 12px;
+  color: var(--text-muted, #64748b);
+  font-size: 0.85rem;
 }
 
 /* ===== АДАПТИВНІСТЬ ===== */

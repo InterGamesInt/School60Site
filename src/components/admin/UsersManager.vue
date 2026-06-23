@@ -27,7 +27,7 @@ export default {
 
 <style scoped>
 .manager {
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 12px;
   padding: 20px;
 }
@@ -38,7 +38,7 @@ export default {
   font-size: 24px;
 }
 .info-box {
-  background: var(--light-bg, #e8f0fe);
+  background: var(--surface-accent, #e8f0fe);
   padding: 20px;
   border-radius: 12px;
   border-left: 4px solid var(--primary, #2F5F48);

@@ -102,6 +102,9 @@ export default {
   },
   methods: {
     getPlaceholderImage(fullName) {
+      const styles = getComputedStyle(document.documentElement);
+      const primary = styles.getPropertyValue('--primary').trim() || '#2F5F48';
+      const surfaceMuted = styles.getPropertyValue('--surface-muted').trim() || '#f0f2f5';
       const initials = fullName
         .split(' ')
         .map(name => name.charAt(0))
@@ -110,9 +113,9 @@ export default {
         .slice(0, 2);
       const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-          <rect width="200" height="200" fill="#f0f2f5"/>
-          <circle cx="100" cy="100" r="80" fill="#C7613C" opacity="0.15"/>
-          <text x="100" y="115" text-anchor="middle" fill="#C7613C" font-family="Arial, sans-serif" font-size="64" font-weight="bold" dominant-baseline="middle">${initials}</text>
+          <rect width="200" height="200" fill="${surfaceMuted}"/>
+          <circle cx="100" cy="100" r="80" fill="${primary}" opacity="0.15"/>
+          <text x="100" y="115" text-anchor="middle" fill="${primary}" font-family="Arial, sans-serif" font-size="64" font-weight="bold" dominant-baseline="middle">${initials}</text>
         </svg>
       `;
       return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
@@ -126,7 +129,7 @@ export default {
         ALLOWED_TAGS: [
           'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote',
           'p', 'br', 'img', 'h1', 'h2', 'h3', 'h4', 'span', 'div',
-          'iframe', 'video', 'source'
+          'iframe', 'video', 'source', 'pre', 'code', 'hr'
         ],
         ALLOWED_ATTR: [
           'href', 'target', 'src', 'alt', 'class', 'style',
@@ -253,7 +256,7 @@ export default {
 <style scoped>
 .team-page {
   padding: 80px 0;
-  background: #f8fafc;
+  background: linear-gradient(160deg, var(--page-gradient-start, #f8fafc), var(--page-gradient-end, #eef2f5));
   min-height: 100vh;
 }
 .container {
@@ -266,7 +269,7 @@ export default {
   font-weight: 700;
   text-align: center;
   margin-bottom: 48px;
-  color: #1e293b;
+  color: var(--heading, #1e293b);
   position: relative;
 }
 .page-title::after {
@@ -274,7 +277,7 @@ export default {
   display: block;
   width: 80px;
   height: 4px;
-  background: #C7613C;
+  background: var(--secondary, #C7613C);
   margin: 16px auto 0;
   border-radius: 2px;
 }
@@ -284,13 +287,13 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
 }
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid #e2e8f0;
-  border-top-color: #C7613C;
+  border: 4px solid var(--border, #e2e8f0);
+  border-top-color: var(--secondary, #C7613C);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin-bottom: 16px;
@@ -299,9 +302,9 @@ export default {
 .empty-state {
   text-align: center;
   padding: 80px 20px;
-  background: white;
+  background: var(--surface-elevated, white);
   border-radius: 24px;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-size: 1.2rem;
 }
 .team-grid {
@@ -310,19 +313,20 @@ export default {
   gap: 32px;
 }
 .team-card {
-  background: white;
+  background: var(--surface-elevated, white);
   border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+  box-shadow: var(--card-shadow, 0 8px 20px rgba(0,0,0,0.05));
+  border: 1px solid var(--border, transparent);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   cursor: pointer;
 }
 .team-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 16px 32px rgba(0,0,0,0.1);
+  box-shadow: var(--card-shadow-hover, 0 16px 32px rgba(0,0,0,0.1));
 }
 .photo-wrapper {
-  background: #f1f5f9;
+  background: var(--surface-muted, #f1f5f9);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -334,7 +338,7 @@ export default {
   height: 220px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid white;
+  border: 4px solid var(--surface, white);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   transition: transform 0.2s;
 }
@@ -346,14 +350,14 @@ export default {
 .employee-name {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--heading, #0f172a);
   margin-bottom: 8px;
   line-height: 1.3;
 }
 .employee-position {
   font-size: 1rem;
   font-weight: 600;
-  color: #C7613C;
+  color: var(--secondary, #C7613C);
   margin-bottom: 16px;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -361,7 +365,7 @@ export default {
 .employee-description {
   font-size: 0.95rem;
   line-height: 1.5;
-  color: #334155;
+  color: var(--text-secondary, #334155);
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 4;
@@ -375,7 +379,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.75);
+  background: var(--overlay, rgba(0,0,0,0.75));
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -386,7 +390,7 @@ export default {
 .modal-container {
   --rt-document-width: 760px;
   --rt-document-scale: 1;
-  background: white;
+  background: var(--surface-elevated, white);
   border-radius: 32px;
   max-width: 90%;
   width: 100%;
@@ -405,7 +409,7 @@ export default {
   position: absolute;
   top: 20px;
   right: 24px;
-  background: #f1f5f9;
+  background: var(--surface-muted, #f1f5f9);
   border: none;
   font-size: 24px;
   line-height: 1;
@@ -418,10 +422,10 @@ export default {
   justify-content: center;
   transition: all 0.2s;
   z-index: 10;
-  color: #1e293b;
+  color: var(--text-primary, #1e293b);
 }
 .modal-close:hover {
-  background: #e2e8f0;
+  background: var(--border, #e2e8f0);
   transform: scale(1.05);
 }
 .modal-content {
@@ -434,12 +438,12 @@ export default {
 .modal-info h2 {
   font-size: 2rem;
   margin-bottom: 8px;
-  color: #0f172a;
+  color: var(--heading, #0f172a);
 }
 .modal-position {
   font-size: 1.2rem;
   font-weight: 600;
-  color: #C7613C;
+  color: var(--secondary, #C7613C);
   margin-bottom: 20px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -472,7 +476,7 @@ export default {
   text-size-adjust: 100%;
   font-size: 1rem;
   line-height: 1.8;
-  color: #334155;
+  color: var(--text-secondary, #334155);
   overflow: visible;
   word-wrap: break-word;
   padding: 24px 28px; /* як у редакторі */
@@ -506,13 +510,17 @@ export default {
 }
 
 .modal-description :deep(blockquote) {
-  border-left: 4px solid #C7613C !important;
+  border-left: 4px solid var(--secondary, #C7613C) !important;
   margin: 1.2rem 0 !important;
   padding: 0.8rem 1.2rem !important;
   font-style: italic !important;
-  color: #475569 !important;
-  background: #f8fafc;
+  color: var(--text-muted, #475569) !important;
+  background: var(--primary-light, #f8fafc);
   border-radius: 0 8px 8px 0;
+}
+
+.modal-description :deep(blockquote p:last-child) {
+  margin-bottom: 0;
 }
 
 .modal-description :deep(ul),
@@ -522,22 +530,22 @@ export default {
 }
 
 .modal-description :deep(a) {
-  color: #C7613C;
+  color: var(--secondary, #C7613C);
   text-decoration: underline;
   font-weight: 500;
 }
 
 .modal-description :deep(code) {
-  background: #f8fafc;
+  background: var(--primary-light, #f8fafc);
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   font-size: 0.9em;
-  color: #C7613C;
+  color: var(--secondary, #C7613C);
 }
 
 .modal-description :deep(pre) {
-  background: #1e293b;
-  color: #e2e8f0;
+  background: var(--code-bg, #1e293b);
+  color: var(--code-text, #e2e8f0);
   padding: 1rem 1.2rem;
   border-radius: 12px;
   overflow-x: auto;
@@ -554,7 +562,7 @@ export default {
 
 .modal-description :deep(hr) {
   border: none;
-  border-top: 2px solid #e9edf2;
+  border-top: 2px solid var(--border, #e9edf2);
   margin: 1.5rem 0;
 }
 

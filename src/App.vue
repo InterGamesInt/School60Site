@@ -29,6 +29,7 @@ export default {
       localStorage.setItem('theme', themeName);
       
       const root = document.documentElement;
+      root.dataset.theme = themeName;
       Object.keys(theme.colors).forEach(key => {
         root.style.setProperty(key, theme.colors[key]);
       });
@@ -59,10 +60,10 @@ export default {
 html, body, #app {
   width: 100%;
   min-height: 100vh;
-  background: var(--bg, #FAFAF8);
+  background: var(--page-bg, #FAFAF8);
   color: var(--text, #1E293B);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  transition: background 0.3s, color 0.3s;
+  transition: background-color 0.35s ease, color 0.35s ease;
 }
 
 #app {
@@ -72,6 +73,8 @@ html, body, #app {
 
 main {
   flex: 1;
+  background: var(--page-bg, #FAFAF8);
+  transition: background-color 0.35s ease;
 }
 
 .container {
@@ -93,7 +96,7 @@ a:hover {
 
 .btn-primary {
   background: var(--secondary, #C7613C);
-  color: var(--white, #FFFFFF);
+  color: var(--on-secondary, #FFFFFF);
   border: none;
   padding: 10px 20px;
   border-radius: 40px;

@@ -155,7 +155,7 @@ export default {
 .about {
   position: relative;
   padding: 80px 0 100px;
-  background: linear-gradient(160deg, var(--about-gradient-start, #f8fdfb) 0%, var(--about-gradient-end, #edf6f2) 100%);
+  background: linear-gradient(160deg, var(--section-bg-alt, #f8fdfb) 0%, var(--section-bg, #edf6f2) 100%);
   overflow: hidden;
 }
 
@@ -179,21 +179,21 @@ export default {
   height: 400px;
   top: -150px;
   right: -100px;
-  background: radial-gradient(circle, rgba(47, 95, 72, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--decor-primary, rgba(47, 95, 72, 0.08)) 0%, transparent 70%);
 }
 .shape-2 {
   width: 300px;
   height: 300px;
   bottom: -80px;
   left: -60px;
-  background: radial-gradient(circle, rgba(199, 97, 60, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--decor-secondary, rgba(199, 97, 60, 0.06)) 0%, transparent 70%);
 }
 .shape-3 {
   width: 200px;
   height: 200px;
   top: 40%;
   left: 40%;
-  background: radial-gradient(circle, rgba(47, 95, 72, 0.04) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--decor-soft, rgba(47, 95, 72, 0.04)) 0%, transparent 70%);
 }
 
 .container {
@@ -215,7 +215,7 @@ export default {
 .section-badge {
   display: inline-block;
   background: var(--primary, #2F5F48);
-  color: #fff;
+  color: var(--on-primary, #fff);
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -262,16 +262,16 @@ export default {
    КАРТКА
    ============================================ */
 .card {
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: var(--card-border-radius, 20px);
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(47, 95, 72, 0.06);
+  box-shadow: var(--card-shadow, 0 8px 24px rgba(47, 95, 72, 0.06));
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
               box-shadow 0.4s ease;
   position: relative;
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(47, 95, 72, 0.04);
+  border: 1px solid var(--border, rgba(47, 95, 72, 0.04));
   animation: fadeUp 0.6s ease forwards;
   opacity: 0;
   transform: translateY(30px);
@@ -339,7 +339,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, rgba(47, 95, 72, 0.1) 0%, rgba(47, 95, 72, 0.6) 100%);
+  background: linear-gradient(180deg, transparent 0%, var(--image-overlay, rgba(47, 95, 72, 0.6)) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -352,7 +352,7 @@ export default {
 
 .card-icon {
   font-size: 3rem;
-  background: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--surface, #ffffff) 90%, transparent);
   width: 70px;
   height: 70px;
   border-radius: 50%;
@@ -396,7 +396,7 @@ export default {
 .card-footer {
   display: flex;
   justify-content: flex-end;
-  border-top: 1px solid rgba(47, 95, 72, 0.06);
+  border-top: 1px solid var(--border, rgba(47, 95, 72, 0.06));
   padding-top: 16px;
   margin-top: auto;
 }

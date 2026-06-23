@@ -23,14 +23,31 @@
           </div>
           <div class="form-group">
             <label for="password">Пароль</label>
-            <input
-              type="password"
-              id="password"
-              v-model="password"
-              placeholder="••••••••"
-              required
-              autocomplete="current-password"
-            />
+            <div class="password-field">
+              <input
+                :type="showPassword ? 'text' : 'password'"
+                id="password"
+                v-model="password"
+                placeholder="••••••••"
+                required
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="showPassword ? 'Приховати пароль' : 'Показати пароль'"
+                :title="showPassword ? 'Приховати пароль' : 'Показати пароль'"
+                @click="showPassword = !showPassword"
+              >
+                <svg v-if="showPassword" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 4.2A10.8 10.8 0 0 1 12 4c5.5 0 9 5 9 8a10.7 10.7 0 0 1-2.1 3.5M6.3 6.3C4.3 7.7 3 10 3 12c0 3 3.5 8 9 8 1.2 0 2.3-.2 3.3-.6" />
+                </svg>
+                <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 12s3.5-8 9-8 9 8 9 8-3.5 8-9 8-9-8-9-8Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+            </div>
           </div>
           <button type="submit" class="login-btn" :disabled="loading">
             {{ loading ? 'Завантаження...' : 'Увійти' }}
@@ -57,6 +74,7 @@ export default {
     return {
       email: '',
       password: '',
+      showPassword: false,
       error: '',
       loading: false
     };
@@ -94,7 +112,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-gradient, linear-gradient(135deg, #f0f4f8 0%, #e6ecf2 100%));
+  background: linear-gradient(135deg, var(--page-gradient-start, #f0f4f8) 0%, var(--page-gradient-end, #e6ecf2) 100%);
   padding: 40px 20px;
   width: 100%;
 }
@@ -108,9 +126,10 @@ export default {
 }
 
 .login-card {
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 28px;
-  box-shadow: 0 20px 60px var(--shadow, rgba(0, 0, 0, 0.08)), 0 6px 20px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-hover, 0 20px 60px rgba(0, 0, 0, 0.08));
+  border: 1px solid var(--border, transparent);
   padding: 44px 36px 36px;
   transition: transform 0.2s ease, box-shadow 0.3s ease;
   animation: fadeUp 0.4s ease;
@@ -168,7 +187,7 @@ export default {
 }
 
 .login-header p {
-  color: var(--text-light, #6c7a7a);
+  color: var(--text-muted, #52635d);
   font-size: 15px;
   margin: 0;
   font-weight: 400;
@@ -197,21 +216,66 @@ export default {
   border-radius: 14px;
   font-size: 16px;
   transition: all 0.25s ease;
-  background: var(--bg, #fafcfc);
+  background: var(--surface-soft, #fafcfc);
   color: var(--text, #1a2b22);
   font-weight: 500;
 }
 
 .form-group input::placeholder {
-  color: var(--text-light, #a0abb5);
+  color: var(--text-muted, #718096);
   font-weight: 400;
+  opacity: 0.82;
 }
 
 .form-group input:focus {
   outline: none;
   border-color: var(--secondary, #C7613C);
-  background-color: var(--white, #ffffff);
-  box-shadow: 0 0 0 4px rgba(199, 97, 60, 0.10);
+  background-color: var(--surface, #ffffff);
+  box-shadow: 0 0 0 4px var(--focus-ring, rgba(199, 97, 60, 0.10));
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 52px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 38px;
+  height: 38px;
+  padding: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-50%);
+  color: var(--primary, #2F5F48);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  color: var(--secondary, #C7613C);
+  background: var(--primary-light, #eef6f2);
+  outline: none;
+}
+
+.password-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* ============================================
@@ -220,7 +284,7 @@ export default {
 .login-btn {
   width: 100%;
   background: var(--primary, #2F5F48);
-  color: var(--white, #ffffff);
+  color: var(--on-primary, #ffffff);
   border: none;
   padding: 14px 20px;
   border-radius: 40px;

@@ -35,10 +35,15 @@
       </div>
       <div class="form-group">
         <label>Опис</label>
-        <RichTextEditor v-model="editData.description" placeholder="Введіть біографію, досягнення, контакти..." />
+        <RichTextEditor
+          v-model="editData.description"
+          content-label="Опис"
+          placeholder="Введіть біографію, досягнення, контакти..."
+          @limit-change="descriptionOverLimit = $event.overLimit"
+        />
       </div>
       <div class="form-actions">
-        <button @click="saveItem" class="btn-save" :disabled="saving">Зберегти</button>
+        <button @click="saveItem" class="btn-save" :disabled="saving || descriptionOverLimit">Зберегти</button>
         <button @click="cancelForm" class="btn-cancel">Скасувати</button>
       </div>
     </div>
@@ -107,6 +112,7 @@ export default {
       editData: { fullName: '', position: '', description: '', photoUrl: '' },
       selectedFile: null,
       saving: false,
+      descriptionOverLimit: false,
       cropperModalVisible: false,
       cropperImageSrc: null,
       cropper: null,
@@ -129,14 +135,21 @@ export default {
       return DOMPurify.sanitize(html, {
         ALLOWED_TAGS: [
           'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote',
-          'p', 'br', 'h1', 'h2', 'h3', 'h4', 'span', 'div'
+          'p', 'br', 'img', 'h1', 'h2', 'h3', 'h4', 'span', 'div',
+          'iframe', 'video', 'source', 'pre', 'code', 'hr'
         ],
-        ALLOWED_ATTR: ['href', 'target', 'src', 'alt', 'class', 'style']
+        ALLOWED_ATTR: [
+          'href', 'target', 'src', 'alt', 'class', 'style',
+          'width', 'height', 'frameborder', 'allowfullscreen', 'allow',
+          'controls', 'autoplay', 'muted', 'loop',
+          'data-wrap', 'data-text-align'
+        ]
       });
     },
     openAddForm() {
       this.editing = false;
       this.editData = { fullName: '', position: '', description: '', photoUrl: '' };
+      this.descriptionOverLimit = false;
       this.showForm = true;
     },
     triggerFileInput() {
@@ -244,22 +257,36 @@ export default {
         alert('Введіть ПІБ');
         return;
       }
-      this.saving = true;
-      const employeeData = { ...this.editData };
-      if (this.editing) {
-        await updateDoc(doc(db, 'employees', this.editId), employeeData);
-      } else {
-        const maxOrder = Math.max(...this.items.map(i => i.order ?? 0), 0);
-        employeeData.order = maxOrder + 1;
-        await addDoc(collection(db, 'employees'), employeeData);
+      if (this.descriptionOverLimit) {
+        alert('Опис перевищує безпечний ліміт Firebase. Скоротіть текст або видаліть частину зображень.');
+        return;
       }
-      this.cancelForm();
-      this.saving = false;
+      this.saving = true;
+      try {
+        const employeeData = { ...this.editData };
+        if (this.editing) {
+          await updateDoc(doc(db, 'employees', this.editId), employeeData);
+        } else {
+          const maxOrder = Math.max(...this.items.map(i => i.order ?? 0), 0);
+          employeeData.order = maxOrder + 1;
+          await addDoc(collection(db, 'employees'), employeeData);
+        }
+        this.cancelForm();
+      } catch (err) {
+        console.error(err);
+        const isSizeError = String(err?.message || '').includes('longer than 1048487 bytes');
+        alert(isSizeError
+          ? 'Опис завеликий для Firebase. Скоротіть текст або видаліть частину зображень.'
+          : 'Помилка збереження. Спробуйте ще раз.');
+      } finally {
+        this.saving = false;
+      }
     },
     editItem(item) {
       this.editing = true;
       this.editId = item.id;
       this.editData = { ...item };
+      this.descriptionOverLimit = false;
       this.selectedFile = null;
       this.showForm = true;
     },
@@ -268,6 +295,7 @@ export default {
       this.editing = false;
       this.editId = null;
       this.editData = { fullName: '', position: '', description: '', photoUrl: '' };
+      this.descriptionOverLimit = false;
       this.selectedFile = null;
       if (this.cropperModalVisible) this.closeCropper();
     },
@@ -344,7 +372,7 @@ export default {
    КОМПОНЕНТ MANAGER
    ============================================ */
 .manager {
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 16px;
   padding: 24px;
   box-shadow: var(--shadow-light, 0 1px 3px rgba(0, 0, 0, 0.05));
@@ -381,12 +409,12 @@ export default {
 }
 
 .form-card {
-  background: var(--light-bg, #fefcf8);
+  background: var(--surface-soft, #fefcf8);
   padding: 24px;
   border-radius: 20px;
   margin-bottom: 32px;
   border: 1px solid var(--border-color, #e9ecef);
-  box-shadow: var(--shadow, 0 4px 12px rgba(0, 0, 0, 0.04));
+  box-shadow: var(--card-shadow, 0 4px 12px rgba(0, 0, 0, 0.04));
 }
 .form-card h3 {
   margin-top: 0;
@@ -412,13 +440,13 @@ export default {
   border-radius: 12px;
   font-size: 1rem;
   transition: 0.2s;
-  background: var(--white, #ffffff) !important;
+  background: var(--surface, #ffffff) !important;
   color: var(--text-primary, #1e293b);
 }
 .form-control:focus {
   outline: none;
   border-color: var(--secondary, #C7613C);
-  box-shadow: 0 0 0 3px rgba(199, 97, 60, 0.1);
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(199, 97, 60, 0.1));
 }
 
 .photo-upload-area {
@@ -536,7 +564,7 @@ export default {
   flex-wrap: wrap;
   align-items: center;
   gap: 20px;
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   padding: 16px 20px;
   border-radius: 20px;
   border: 1px solid var(--border-color, #edf2f7);
@@ -626,6 +654,7 @@ export default {
 .btn-edit,
 .btn-delete {
   background: none;
+  color: var(--text-secondary, #495057);
   border: none;
   font-size: 1.3rem;
   cursor: pointer;
@@ -650,7 +679,7 @@ export default {
   text-align: center;
   padding: 60px 20px;
   color: var(--text-muted, #8c9aad);
-  background: var(--bg-light, #fcfcfc);
+  background: var(--surface-soft, #fcfcfc);
   border-radius: 32px;
   font-style: italic;
 }
@@ -699,6 +728,7 @@ export default {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -708,7 +738,7 @@ export default {
 }
 .cropper-modal {
   position: relative;
-  background: var(--white, #ffffff);
+  background: var(--surface-elevated, #ffffff);
   border-radius: 20px;
   padding: 24px;
   width: 70vw;
@@ -718,6 +748,7 @@ export default {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
   color: var(--text-primary, #212529);
   border: 1px solid var(--border-color, #dee2e6);
+  opacity: 1;
 }
 .cropper-modal h3 {
   margin: 0 0 16px 0;
@@ -729,7 +760,7 @@ export default {
 .cropper-container-wrapper {
   width: 100%;
   min-height: 0;
-  background: var(--bg-light, #f8f9fa);
+  background: var(--surface-soft, #f8f9fa);
   border-radius: 16px;
   margin: 8px 0 16px;
   flex: 1;
