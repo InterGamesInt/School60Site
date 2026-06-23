@@ -72,23 +72,31 @@
     </div>
 
     <!-- Модальне вікно для кропу (без змін) -->
-    <div v-if="cropperModalVisible" class="modal-overlay" @click.self="closeCropper">
+    <div
+      v-if="cropperModalVisible"
+      class="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cropper-title"
+      @click.self="closeCropper"
+    >
       <div class="cropper-modal">
-        <h3>Редагування фото</h3>
+        <button type="button" class="cropper-close" aria-label="Закрити редактор фото" @click="closeCropper">×</button>
+        <h3 id="cropper-title">Редагування фото</h3>
         <div class="cropper-container-wrapper">
           <img ref="cropperImage" :src="cropperImageSrc" alt="Crop">
         </div>
         <div class="cropper-controls">
-          <button @click="zoomOut" class="ctrl-btn">−</button>
-          <span>Зум</span>
-          <button @click="zoomIn" class="ctrl-btn">+</button>
-          <button @click="rotateLeft" class="ctrl-btn">↺</button>
-          <button @click="rotateRight" class="ctrl-btn">↻</button>
-          <button @click="resetCrop" class="ctrl-btn reset">Скинути</button>
+          <button type="button" @click="zoomOut" class="ctrl-btn" aria-label="Зменшити фото" title="Зменшити">−</button>
+          <span>Масштаб</span>
+          <button type="button" @click="zoomIn" class="ctrl-btn" aria-label="Збільшити фото" title="Збільшити">+</button>
+          <button type="button" @click="rotateLeft" class="ctrl-btn" aria-label="Повернути ліворуч" title="Повернути ліворуч">↺</button>
+          <button type="button" @click="rotateRight" class="ctrl-btn" aria-label="Повернути праворуч" title="Повернути праворуч">↻</button>
+          <button type="button" @click="resetCrop" class="ctrl-btn reset">Скинути</button>
         </div>
         <div class="cropper-actions">
-          <button @click="applyCrop" class="btn-apply">Застосувати</button>
-          <button @click="closeCropper" class="btn-cancel">Скасувати</button>
+          <button type="button" @click="applyCrop" class="btn-apply">Застосувати</button>
+          <button type="button" @click="closeCropper" class="btn-cancel">Скасувати</button>
         </div>
       </div>
     </div>
@@ -116,7 +124,8 @@ export default {
       cropperModalVisible: false,
       cropperImageSrc: null,
       cropper: null,
-      pendingFile: null
+      pendingFile: null,
+      bodyOverflowBeforeCropper: ''
     };
   },
   computed: {
@@ -192,17 +201,28 @@ export default {
       try {
         this.cropper = new window.Cropper(img, {
           aspectRatio: 1,
-          viewMode: 2,
-          autoCropArea: 1,
+          viewMode: 1,
+          dragMode: 'move',
+          autoCropArea: 0.9,
+          movable: true,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
           zoomable: true,
+          zoomOnTouch: true,
+          zoomOnWheel: false,
           rotatable: true,
           scalable: true,
           background: true,
-          minContainerWidth: 500,
-          minContainerHeight: 400,
-          responsive: true
+          guides: true,
+          center: true,
+          responsive: true,
+          restore: false,
+          toggleDragModeOnDblclick: false,
+          minContainerWidth: 0,
+          minContainerHeight: 0,
+          minCropBoxWidth: 72,
+          minCropBoxHeight: 72
         });
-        console.log('Cropper created', this.cropper);
       } catch (err) {
         console.error(err);
         alert('Помилка створення редактора');
@@ -332,9 +352,17 @@ export default {
   watch: {
     cropperModalVisible(newVal) {
       if (newVal) {
+        this.bodyOverflowBeforeCropper = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
         this.$nextTick(() => this.initCropper());
+      } else {
+        document.body.style.overflow = this.bodyOverflowBeforeCropper;
       }
     }
+  },
+  beforeUnmount() {
+    if (this.cropper) this.cropper.destroy();
+    document.body.style.overflow = this.bodyOverflowBeforeCropper;
   }
 };
 </script>
@@ -564,6 +592,8 @@ export default {
   flex-wrap: wrap;
   align-items: center;
   gap: 20px;
+  min-width: 0;
+  overflow: hidden;
   background: var(--surface-elevated, #ffffff);
   padding: 16px 20px;
   border-radius: 20px;
@@ -593,6 +623,8 @@ export default {
 .item-info {
   flex: 1;
   min-width: 180px;
+  max-width: 100%;
+  overflow: hidden;
 }
 .item-info h3 {
   margin: 0 0 6px 0;
@@ -615,8 +647,11 @@ export default {
   font-size: 0.85rem;
   line-height: 1.5;
   margin: 0 0 8px 0;
+  width: 100%;
+  max-width: 100%;
   max-height: 4.5em;
   overflow: hidden;
+  overflow-wrap: anywhere;
   display: -webkit-box;
   /* standard property for compatibility */
   line-clamp: 3;
@@ -624,8 +659,12 @@ export default {
   -webkit-box-orient: vertical;
   text-overflow: ellipsis;
 }
-.description-preview img {
-  display: none;
+.description-preview :deep(img),
+.description-preview :deep(iframe),
+.description-preview :deep(video),
+.description-preview :deep(source),
+.description-preview :deep(.video-wrapper) {
+  display: none !important;
 }
 .description-preview ul,
 .description-preview ol {
@@ -726,7 +765,7 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 100dvh;
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(5px);
   display: flex;
@@ -735,14 +774,17 @@ export default {
   z-index: 2000;
   padding: 20px;
   box-sizing: border-box;
+  overscroll-behavior: contain;
+  overflow-y: auto;
 }
 .cropper-modal {
   position: relative;
   background: var(--surface-elevated, #ffffff);
   border-radius: 20px;
   padding: 24px;
-  width: 70vw;
-  height: 90vh;
+  width: min(920px, 100%);
+  height: min(90dvh, 820px);
+  max-height: calc(100dvh - 40px);
   display: flex;
   flex-direction: column;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
@@ -750,8 +792,28 @@ export default {
   border: 1px solid var(--border-color, #dee2e6);
   opacity: 1;
 }
+.cropper-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-muted, #eef2f1);
+  color: var(--text-primary, #212529);
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.cropper-close:hover {
+  background: var(--surface-accent, #e4ece9);
+}
 .cropper-modal h3 {
-  margin: 0 0 16px 0;
+  margin: 0 52px 16px;
   text-align: center;
   font-size: 1.5rem;
   font-weight: 600;
@@ -769,6 +831,11 @@ export default {
   justify-content: center;
   border: 1px dashed var(--border-color, #ced4da);
   overflow: hidden;
+  touch-action: none;
+}
+.cropper-container-wrapper > img {
+  display: block;
+  max-width: 100%;
 }
 .cropper-container-wrapper :deep(.cropper-container) {
   width: 100% !important;
@@ -796,6 +863,7 @@ export default {
   font-size: 1.5rem;
   cursor: pointer;
   transition: all 0.2s;
+  touch-action: manipulation;
 }
 .ctrl-btn:hover {
   background: var(--secondary, #C7613C);
@@ -832,7 +900,7 @@ export default {
 }
 .cropper-actions .btn-cancel {
   background: var(--btn-secondary, #5a6e6a);
-  color: var(--text-light, #eee);
+  color: var(--white, #ffffff);
 }
 .cropper-actions .btn-cancel:hover {
   background: var(--btn-secondary-hover, #4a5a56);
@@ -840,27 +908,83 @@ export default {
 
 @media (max-width: 640px) {
   .modal-overlay {
-    padding: 10px;
+    padding: 0;
+    align-items: stretch;
   }
   .cropper-modal {
-    padding: 16px;
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    padding:
+      max(12px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+    border: 0;
+    border-radius: 0;
   }
   .cropper-modal h3 {
-    font-size: 1.3rem;
-    margin-bottom: 8px;
+    font-size: 1.15rem;
+    margin: 4px 48px 8px;
+  }
+  .cropper-close {
+    top: max(6px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+  }
+  .cropper-container-wrapper {
+    min-height: 180px;
+    margin: 4px 0 8px;
+    border-radius: 12px;
+  }
+  .cropper-controls {
+    gap: 8px;
+    margin: 4px 0 10px;
+  }
+  .cropper-controls span {
+    display: none;
   }
   .ctrl-btn {
-    width: 38px;
-    height: 38px;
-    font-size: 1.2rem;
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+    border-radius: 12px;
   }
   .ctrl-btn.reset {
-    padding: 0 12px;
-    font-size: 0.8rem;
+    padding: 0 14px;
+    font-size: 0.82rem;
+  }
+  .cropper-actions {
+    gap: 10px;
+    margin-top: 0;
   }
   .btn-apply,
   .cropper-actions .btn-cancel {
-    padding: 8px 20px;
+    flex: 1;
+    min-height: 48px;
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 380px), (max-height: 620px) {
+  .cropper-modal {
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  .cropper-modal h3 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+  .cropper-controls {
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .ctrl-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .btn-apply,
+  .cropper-actions .btn-cancel {
+    min-height: 44px;
   }
 }
 </style>
