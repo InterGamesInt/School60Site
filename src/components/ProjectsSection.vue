@@ -25,21 +25,22 @@ export default {
 <style scoped>
 .projects {
   padding: 60px 0;
-  background: #f0f7ff;
+  background: var(--section-bg-alt, #f0f7ff);
 }
 .section-title {
   font-size: 38px;
   text-align: center;
   margin-bottom: 40px;
-  color: #2F5F48;
+  color: var(--primary, #2F5F48);
 }
 .project-card {
   display: flex;
   flex-wrap: wrap;
-  background: white;
+  background: var(--surface-elevated, #ffffff);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  box-shadow: var(--card-shadow, 0 8px 20px rgba(0,0,0,0.1));
+  border: 1px solid var(--border, transparent);
   max-width: 800px;
   margin: 0 auto;
 }
@@ -62,32 +63,51 @@ export default {
 .project-info h3 {
   font-size: 28px;
   margin-bottom: 15px;
-  color: #2F5F48;
+  color: var(--primary, #2F5F48);
 }
 .price {
   font-size: 20px;
   font-weight: bold;
-  color: #C7613C;
+  color: var(--secondary, #C7613C);
   margin-bottom: 25px;
 }
 .btn {
   display: inline-block;
-  background: #2F5F48;
-  color: white;
+  background: var(--primary, #2F5F48);
+  color: var(--on-primary, #ffffff);
   padding: 12px 24px;
   text-decoration: none;
   border-radius: 8px;
   font-weight: 500;
-  transition: background 0.3s;
+  transition: background 0.3s, transform 0.2s;
   text-align: center;
   width: fit-content;
+  border: none;
+  cursor: pointer;
 }
 .btn:hover {
-  background: #C7613C;
+  background: var(--secondary, #C7613C);
+  transform: translateY(-2px);
+}
+.btn:active {
+  transform: scale(0.98);
 }
 @media (max-width: 600px) {
   .project-card {
     flex-direction: column;
+  }
+  .project-image {
+    min-width: unset;
+    max-height: 250px;
+  }
+  .project-info {
+    padding: 20px;
+  }
+  .project-info h3 {
+    font-size: 24px;
+  }
+  .section-title {
+    font-size: 30px;
   }
 }
 </style>
