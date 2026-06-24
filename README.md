@@ -31,13 +31,13 @@
 Склонуйте репозиторій:
 
 ```bash
-git clone https://github.com/USERNAME/REPOSITORY_NAME.git
+git clone https://github.com/InterGamesInt/School60Site
 ```
 
 Перейдіть у папку проєкту:
 
 ```bash
-cd REPOSITORY_NAME
+cd School60Site
 ```
 
 Встановіть залежності:
