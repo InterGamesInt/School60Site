@@ -286,6 +286,7 @@ export default {
   overflow: hidden;
   width: 100%;
   position: relative;
+  aspect-ratio: 16 / 9;
 }
 
 .carousel-slide {
@@ -296,14 +297,15 @@ export default {
 .carousel-image {
   flex: 0 0 100%;
   width: 100%;
+  height: 100%;
 }
 .carousel-image img {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   object-fit: cover;
-  aspect-ratio: 16 / 9;
-  transition: transform 0.5s ease;
+  transition: none;
+  image-rendering: auto;
 }
 .hero-carousel:hover .carousel-image img {
   transform: scale(1.02);

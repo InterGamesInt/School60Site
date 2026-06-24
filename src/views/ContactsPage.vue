@@ -30,12 +30,13 @@
             <div class="info-icon">📞</div>
             <h2>Контакти</h2>
             <p>
-              <strong>Телефон:</strong>
-              <a href="tel:+380441234567">+38 (044) 123-45-67</a>
+              <strong>Телефони:</strong>
+              <a href="tel:+380442755191">+38 (044) 275-51-91</a>,
+              <a href="tel:+380442757454">+38 (044) 275-74-54</a>
             </p>
             <p>
               <strong>Email:</strong>
-              <a href="mailto:school60@kyiv.ua">school60@kyiv.ua</a>
+              <a href="mailto:60school@kyivcity.gov.ua">school60@kyivcity.gov.ua</a>
             </p>
           </div>
 
