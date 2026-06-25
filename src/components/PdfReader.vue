@@ -28,9 +28,15 @@
       </p>
     </object>
 
+    <div v-else-if="loading" class="pdf-empty pdf-loading">
+      <strong>{{ title }}</strong>
+      <span class="pdf-spinner" aria-hidden="true"></span>
+      <p>{{ loadingText }}</p>
+    </div>
+
     <div v-else class="pdf-empty">
       <strong>{{ title }}</strong>
-      <p>PDF-файл буде додано після завантаження документа.</p>
+      <p>{{ emptyText }}</p>
     </div>
   </div>
 </template>
@@ -50,6 +56,18 @@ export default {
     height: {
       type: [String, Number],
       default: '680px'
+    },
+    loading: {
+      type: Boolean,
+      default: false
+    },
+    loadingText: {
+      type: String,
+      default: 'PDF завантажується...'
+    },
+    emptyText: {
+      type: String,
+      default: 'PDF-файл буде додано після завантаження документа.'
     }
   },
   computed: {
@@ -135,6 +153,31 @@ export default {
 .pdf-empty p {
   margin: 0;
   line-height: 1.5;
+}
+
+.pdf-loading {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.pdf-loading strong {
+  margin-bottom: 0;
+}
+
+.pdf-spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid color-mix(in srgb, var(--primary, #2F5F48) 18%, transparent);
+  border-top-color: var(--primary, #2F5F48);
+  border-radius: 50%;
+  animation: pdf-spin 0.8s linear infinite;
+}
+
+@keyframes pdf-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 640px) {

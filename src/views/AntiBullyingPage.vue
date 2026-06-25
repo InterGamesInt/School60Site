@@ -8,77 +8,105 @@
       </div>
     </section>
 
-    <section class="content-section trust-section">
-      <div class="container two-column">
-        <div class="section-heading">
-          <span>Допомога</span>
-          <h2>Телефони довіри</h2>
-        </div>
-
-        <div class="phones-list">
-          <component
-            v-for="phone in trustPhones"
-            :key="phone.title"
-            :is="phone.href ? 'a' : 'div'"
-            class="phone-row"
-            :href="phone.href || null"
-          >
-            <strong>{{ phone.title }}</strong>
-            <span>{{ phone.value }}</span>
-          </component>
-        </div>
-      </div>
-    </section>
-
-    <section class="content-section documents-section">
-      <div class="container two-column">
-        <div class="section-heading">
-          <span>Нормативна база</span>
-          <h2>Чинні документи</h2>
-          <p>Нормативні акти відкриваються у базі Верховної Ради України, методичні матеріали - за посиланнями з попередньої сторінки школи.</p>
-        </div>
-
-        <div class="document-links">
-          <a
-            v-for="document in documents"
-            :key="document.url"
-            class="document-link"
-            :href="document.url"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <strong>{{ document.title }}</strong>
-            <span>{{ document.status }}</span>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <section class="content-section pdf-section">
-      <div class="container">
+    <section class="content-section resources-section">
+      <div class="container resources-container">
         <div class="section-heading centered">
-          <span>Шкільні документи</span>
-          <h2>Документи для перегляду</h2>
+          <span>Корисна інформація</span>
+          <h2>Документи, матеріали школи та телефони підтримки</h2>
+          <p>Усі основні матеріали зібрані на початку сторінки, щоб їх було легко знайти.</p>
         </div>
 
-        <div class="pdf-accordion">
-          <details v-for="document in pdfDocuments" :key="document.id" class="pdf-details">
-            <summary>{{ document.title }}</summary>
-            <PdfReader :src="document.src" :title="document.title" />
-          </details>
+        <div class="resources-grid">
+          <div class="resource-center">
+            <article class="resource-card pdf-card">
+              <div class="resource-card-header">
+                <span>Шкільні документи</span>
+                <h3>PDF-документи школи</h3>
+                <p>Натисніть на назву документа, щоб відкрити PDF-переглядач прямо на сторінці.</p>
+              </div>
+
+              <div class="pdf-accordion">
+                <details v-for="document in pdfDocuments" :key="document.id" class="pdf-details">
+                  <summary>{{ document.title }}</summary>
+                  <PdfReader
+                    :src="document.src"
+                    :title="document.title"
+                    :loading="document.isLoading"
+                    loading-text="PDF завантажується з бази даних..."
+                    height="clamp(640px, 82vh, 980px)"
+                  />
+                </details>
+              </div>
+            </article>
+
+            <figure v-if="featuredGalleryImage" class="gallery-card gallery-card-large featured-gallery-card">
+              <a :href="featuredGalleryImage.src" target="_blank" rel="noopener noreferrer">
+                <img :src="featuredGalleryImage.src" :alt="featuredGalleryImage.title" loading="lazy" />
+              </a>
+              <figcaption>{{ featuredGalleryImage.title }}</figcaption>
+            </figure>
+          </div>
+
+          <article class="resource-card documents-card">
+            <div class="resource-card-header">
+              <span>Нормативна база</span>
+              <h3>Посилання на документи</h3>
+              <p>Нормативні акти та методичні матеріали відкриваються в окремій вкладці.</p>
+            </div>
+
+            <div class="document-links">
+              <a
+                v-for="document in documents"
+                :key="document.url"
+                class="document-link"
+                :href="document.url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <strong>{{ document.title }}</strong>
+                <span>{{ document.status }}</span>
+              </a>
+            </div>
+          </article>
+
+          <article class="resource-card support-card">
+            <div class="resource-card-header">
+              <span>Допомога</span>
+              <h3>Телефони підтримки</h3>
+              <p>Номери служб, до яких можна звернутися по допомогу.</p>
+            </div>
+
+            <div class="phones-list">
+              <component
+                v-for="phone in trustPhones"
+                :key="phone.title"
+                :is="phone.href ? 'a' : 'div'"
+                class="phone-row"
+                :href="phone.href || null"
+              >
+                <strong>{{ phone.title }}</strong>
+                <span>{{ phone.value }}</span>
+              </component>
+            </div>
+          </article>
         </div>
       </div>
     </section>
 
     <section class="content-section images-section">
-      <div class="container">
+      <div class="container wide-container">
         <div class="section-heading centered">
           <span>Пам'ятки</span>
           <h2>Інформаційні матеріали</h2>
+          <p>Зображення розміщені великими блоками. Натисніть на будь-яке фото, щоб відкрити його окремо та роздивитися детальніше.</p>
         </div>
 
-        <div class="image-list">
-          <figure v-for="image in galleryImages" :key="image.title">
+        <div class="image-gallery">
+          <figure
+            v-for="(image, index) in galleryImages"
+            :key="image.title"
+            :class="['gallery-card', { 'gallery-card-large': index === 0 }]"
+          >
             <a :href="image.src" target="_blank" rel="noopener noreferrer">
               <img :src="image.src" :alt="image.title" loading="lazy" />
             </a>
@@ -91,9 +119,12 @@
 </template>
 
 <script>
+import { doc, onSnapshot } from 'firebase/firestore';
 import PdfReader from '../components/PdfReader.vue';
+import { db } from '../firebase';
 import bullying2 from '../assets/bullying2.png';
 import bullying3 from '../assets/bullying3.png';
+import { loadPdfObjectUrlFromFirestoreChunks, mergeSchoolDocuments } from '../data/schoolDocuments';
 
 export default {
   name: 'AntiBullyingPage',
@@ -167,28 +198,7 @@ export default {
           url: 'https://drive.google.com/file/d/1nTDyYVLH7KHAyJYV-rbSa_NZ_ZrEBDxA/view'
         }
       ],
-      pdfDocuments: [
-        {
-          id: 'commission',
-          title: 'Створення комісії',
-          src: ''
-        },
-        {
-          id: 'response',
-          title: 'Порядок реагування',
-          src: ''
-        },
-        {
-          id: 'submission',
-          title: 'Процедура подання',
-          src: ''
-        },
-        {
-          id: 'statement',
-          title: 'Заява про випадок',
-          src: ''
-        }
-      ],
+      pdfDocuments: mergeSchoolDocuments(),
       galleryImages: [
         {
           title: 'Види булінгу',
@@ -202,8 +212,90 @@ export default {
           title: 'Наслідки булінгу',
           src: bullying3
         }
-      ]
+      ],
+      unsubscribeSchoolDocuments: null,
+      documentsLoadRequestId: 0,
+      pdfObjectUrls: []
     };
+  },
+  computed: {
+    featuredGalleryImage() {
+      return this.galleryImages[0] || null;
+    }
+  },
+  mounted() {
+    this.unsubscribeSchoolDocuments = onSnapshot(
+      doc(db, 'siteSettings', 'schoolDocuments'),
+      (snapshot) => {
+        const savedDocuments = snapshot.exists() ? snapshot.data().documents || {} : {};
+        this.applySchoolDocuments(savedDocuments);
+      },
+      (error) => {
+        console.error('School documents loading error:', error);
+        this.revokePdfObjectUrls();
+        this.pdfDocuments = mergeSchoolDocuments();
+      }
+    );
+  },
+  beforeUnmount() {
+    if (this.unsubscribeSchoolDocuments) {
+      this.unsubscribeSchoolDocuments();
+    }
+    this.revokePdfObjectUrls();
+  },
+  methods: {
+    revokePdfObjectUrls() {
+      this.pdfObjectUrls.forEach(url => URL.revokeObjectURL(url));
+      this.pdfObjectUrls = [];
+    },
+    async applySchoolDocuments(savedDocuments) {
+      const requestId = this.documentsLoadRequestId + 1;
+      this.documentsLoadRequestId = requestId;
+
+      this.revokePdfObjectUrls();
+
+      const documents = mergeSchoolDocuments(savedDocuments).map(documentItem => ({
+        ...documentItem,
+        isLoading: !documentItem.src && documentItem.sourceType === 'firestore-chunks' && Boolean(documentItem.chunkCount)
+      }));
+      this.pdfDocuments = documents;
+      const createdObjectUrls = [];
+
+      const hydratedDocuments = await Promise.all(
+        documents.map(async documentItem => {
+          if (documentItem.src || documentItem.sourceType !== 'firestore-chunks' || !documentItem.chunkCount) {
+            return documentItem;
+          }
+
+          try {
+            const src = await loadPdfObjectUrlFromFirestoreChunks(db, documentItem.id);
+
+            if (src) {
+              createdObjectUrls.push(src);
+            }
+
+            return {
+              ...documentItem,
+              src,
+              isLoading: false
+            };
+          } catch (error) {
+            console.error('PDF chunks loading error:', error);
+            return {
+              ...documentItem,
+              isLoading: false
+            };
+          }
+        })
+      );
+
+      if (this.documentsLoadRequestId === requestId) {
+        this.pdfObjectUrls = createdObjectUrls;
+        this.pdfDocuments = hydratedDocuments;
+      } else {
+        createdObjectUrls.forEach(url => URL.revokeObjectURL(url));
+      }
+    }
   }
 };
 </script>
@@ -220,6 +312,14 @@ export default {
   padding: 0 24px;
 }
 
+.wide-container {
+  max-width: 1280px;
+}
+
+.resources-container {
+  max-width: 1320px;
+}
+
 .page-intro {
   padding: 72px 0 60px;
   background: linear-gradient(135deg, var(--page-gradient-start, #F4F9F6), var(--section-bg-alt, #FBFAF6));
@@ -227,7 +327,8 @@ export default {
 }
 
 .page-badge,
-.section-heading span {
+.section-heading span,
+.resource-card-header span {
   display: inline-flex;
   margin-bottom: 12px;
   color: var(--secondary, #B95636);
@@ -256,18 +357,14 @@ export default {
   padding: 64px 0;
 }
 
-.documents-section,
+.resources-section {
+  background: var(--page-bg, #F7F8F3);
+}
+
 .images-section {
   background: var(--section-bg, #EAF3ED);
   border-top: 1px solid var(--border, #D9E4DD);
   border-bottom: 1px solid var(--border, #D9E4DD);
-}
-
-.two-column {
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 40px;
-  align-items: start;
 }
 
 .section-heading h2 {
@@ -284,9 +381,106 @@ export default {
 }
 
 .section-heading.centered {
-  max-width: 720px;
+  max-width: 820px;
   margin: 0 auto 32px;
   text-align: center;
+}
+
+.resources-grid {
+  display: grid;
+  grid-template-columns: minmax(170px, 15fr) minmax(0, 70fr) minmax(170px, 15fr);
+  grid-template-areas: 'documents center support';
+  gap: 18px;
+  align-items: start;
+}
+
+.resource-center {
+  display: grid;
+  grid-area: center;
+  gap: 28px;
+  min-width: 0;
+}
+
+.pdf-card {
+  padding: 28px;
+  border-color: color-mix(in srgb, var(--primary, #2F5F48) 20%, var(--border, #D9E4DD));
+}
+
+.pdf-card .resource-card-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.42fr);
+  gap: 20px;
+  align-items: end;
+}
+
+.pdf-card .resource-card-header span {
+  grid-column: 1 / -1;
+}
+
+.pdf-card .resource-card-header p {
+  margin: 0;
+}
+
+.resource-card {
+  min-width: 0;
+  padding: 22px;
+  background: var(--surface-elevated, #FFFDFC);
+  border: 1px solid var(--border, #D9E4DD);
+  border-radius: 14px;
+  box-shadow: 0 14px 34px rgba(31, 53, 43, 0.08);
+}
+
+.documents-card {
+  grid-area: documents;
+}
+
+.support-card {
+  grid-area: support;
+}
+
+.documents-card,
+.support-card {
+  padding: 16px;
+}
+
+.documents-card .resource-card-header,
+.support-card .resource-card-header {
+  margin-bottom: 12px;
+}
+
+.documents-card .resource-card-header span,
+.support-card .resource-card-header span {
+  margin-bottom: 8px;
+  font-size: 0.68rem;
+  letter-spacing: 1px;
+}
+
+.documents-card .resource-card-header h3,
+.support-card .resource-card-header h3 {
+  font-size: 1.08rem;
+  line-height: 1.18;
+}
+
+.documents-card .resource-card-header p,
+.support-card .resource-card-header p {
+  display: none;
+}
+
+.resource-card-header {
+  margin-bottom: 18px;
+}
+
+.resource-card-header h3 {
+  margin: 0;
+  color: var(--heading, #1F352B);
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.resource-card-header p {
+  margin: 10px 0 0;
+  color: var(--text-secondary, #485D54);
+  line-height: 1.55;
 }
 
 .phones-list,
@@ -296,47 +490,84 @@ export default {
   gap: 12px;
 }
 
+.documents-card .document-links,
+.support-card .phones-list {
+  gap: 10px;
+}
+
+.pdf-accordion {
+  gap: 16px;
+}
+
 .phone-row,
 .document-link {
   display: grid;
   gap: 6px;
   padding: 16px 18px;
   color: var(--text-primary, #1F352B);
-  background: var(--surface-elevated, #FFFDFC);
+  background: var(--page-bg, #F7F8F3);
   border: 1px solid var(--border, #D9E4DD);
+  border-radius: 10px;
+  text-decoration: none;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.documents-card .document-link,
+.support-card .phone-row {
+  padding: 11px 10px;
   border-radius: 8px;
-  transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
 .phone-row:hover,
 .document-link:hover {
   border-color: var(--secondary, #B95636);
+  box-shadow: 0 10px 22px rgba(185, 86, 54, 0.12);
   transform: translateY(-2px);
 }
 
 .phone-row strong,
 .document-link strong {
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .phone-row span,
 .document-link span {
   color: var(--text-secondary, #485D54);
   line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.documents-card .document-link strong,
+.support-card .phone-row strong {
+  font-size: 0.88rem;
+}
+
+.documents-card .document-link span,
+.support-card .phone-row span {
+  font-size: 0.78rem;
+  line-height: 1.38;
 }
 
 .pdf-details {
   overflow: hidden;
-  background: var(--surface-elevated, #FFFDFC);
+  background: var(--page-bg, #F7F8F3);
   border: 1px solid var(--border, #D9E4DD);
-  border-radius: 8px;
+  border-radius: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pdf-details[open] {
+  border-color: color-mix(in srgb, var(--primary, #2F5F48) 32%, var(--border, #D9E4DD));
+  box-shadow: 0 12px 28px rgba(31, 53, 43, 0.08);
 }
 
 .pdf-details summary {
   cursor: pointer;
-  padding: 18px 20px;
+  padding: 20px 22px;
   color: var(--text-primary, #1F352B);
   font-weight: 700;
+  font-size: 1.04rem;
   list-style: none;
 }
 
@@ -360,48 +591,175 @@ export default {
   content: '-';
 }
 
-.image-list {
-  display: grid;
-  gap: 32px;
-  justify-items: center;
+.pdf-details :deep(.pdf-reader) {
+  border-width: 0;
+  border-radius: 0;
 }
 
-.image-list figure {
-  width: min(100%, 920px);
+.pdf-details :deep(.pdf-toolbar) {
+  padding: 14px 18px;
+}
+
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  align-items: start;
+}
+
+.image-gallery .gallery-card:first-child {
+  display: none;
+}
+
+.gallery-card {
   margin: 0;
   overflow: hidden;
   background: var(--surface-elevated, #FFFDFC);
   border: 1px solid var(--border, #D9E4DD);
-  border-radius: 8px;
+  border-radius: 14px;
+  box-shadow: 0 14px 34px rgba(31, 53, 43, 0.08);
 }
 
-.image-list a {
-  display: block;
-  padding: 18px;
+.gallery-card-large {
+  grid-column: 1 / -1;
+}
+
+.gallery-card a {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 320px;
+  padding: 20px;
   background: #ffffff;
 }
 
-.image-list img {
-  display: block;
-  width: 100%;
-  height: auto;
-  object-fit: contain;
+.gallery-card-large a {
+  min-height: 460px;
 }
 
-.image-list figcaption {
-  padding: 12px 14px;
+.featured-gallery-card a {
+  min-height: 500px;
+}
+
+.gallery-card:not(.gallery-card-large) a {
+  min-height: 380px;
+  padding: 8px;
+}
+
+.gallery-card img {
+  display: block;
+  width: 100%;
+  max-height: 780px;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.gallery-card:not(.gallery-card-large) img {
+  width: 108%;
+  max-width: none;
+  max-height: 700px;
+}
+
+.gallery-card figcaption {
+  padding: 14px 18px;
   color: var(--text-primary, #1F352B);
   font-weight: 700;
   line-height: 1.35;
 }
 
+@media (max-width: 1100px) {
+  .resources-grid {
+    grid-template-columns: minmax(150px, 15fr) minmax(0, 70fr) minmax(150px, 15fr);
+    gap: 14px;
+  }
+
+  .documents-card,
+  .support-card {
+    padding: 14px;
+  }
+}
+
 @media (max-width: 900px) {
-  .two-column {
+  .page-intro h1 {
+    font-size: 2.4rem;
+  }
+
+  .pdf-card .resource-card-header {
     grid-template-columns: 1fr;
   }
 
-  .page-intro h1 {
-    font-size: 2.4rem;
+  .resources-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'center'
+      'documents'
+      'support';
+    gap: 18px;
+  }
+
+  .resource-center {
+    gap: 18px;
+  }
+
+  .featured-gallery-card {
+    display: none;
+  }
+
+  .image-gallery .gallery-card:first-child {
+    display: block;
+  }
+
+  .documents-card,
+  .support-card {
+    padding: 22px;
+  }
+
+  .documents-card .resource-card-header p,
+  .support-card .resource-card-header p {
+    display: block;
+  }
+
+  .documents-card .resource-card-header h3,
+  .support-card .resource-card-header h3 {
+    font-size: 1.35rem;
+  }
+
+  .documents-card .document-link,
+  .support-card .phone-row {
+    padding: 16px 18px;
+  }
+
+  .documents-card .document-link strong,
+  .support-card .phone-row strong {
+    font-size: 1rem;
+  }
+
+  .documents-card .document-link span,
+  .support-card .phone-row span {
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .image-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-card-large {
+    grid-column: auto;
+  }
+
+  .gallery-card a,
+  .gallery-card-large a {
+    min-height: 260px;
+  }
+
+  .gallery-card:not(.gallery-card-large) a {
+    min-height: 320px;
+  }
+
+  .gallery-card:not(.gallery-card-large) img {
+    width: 100%;
+    max-width: 100%;
   }
 }
 
@@ -423,8 +781,22 @@ export default {
     font-size: 1.7rem;
   }
 
+  .resource-card {
+    padding: 18px;
+  }
+
   .pdf-details summary {
     padding: 16px;
+  }
+
+  .pdf-details :deep(.pdf-frame) {
+    min-height: 480px;
+  }
+
+  .gallery-card a,
+  .gallery-card-large a {
+    min-height: 220px;
+    padding: 12px;
   }
 }
 </style>

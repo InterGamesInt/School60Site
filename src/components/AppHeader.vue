@@ -6,8 +6,11 @@
           <img :src="logo" alt="logo">
         </router-link>
         <div class="school-name">
-          <h1>Середня загальноосвітня школа № 60 КРД "Росток" м. Києва</h1>
-          <p>ім. Олександра Загребельного</p>
+          <h1>
+            <span class="school-title-main">Середня загальноосвітня школа № 60 </span>
+            <span class="school-title-gold">ім. Олександра Загребельного</span>
+          </h1>
+          <p>КРД "Росток" м. Києва</p>
         </div>
       </div>
 
@@ -275,16 +278,26 @@ export default {
   margin: 0;
   color: var(--primary, #2F5F48);
   letter-spacing: -0.3px;
-  background: linear-gradient(135deg, var(--primary, #2F5F48) 0%, var(--primary-dark, #1a4032) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+}
+
+.school-title-main,
+.school-title-gold {
+  display: inline;
+}
+
+.school-title-main {
+  color: var(--primary, #2F5F48);
+}
+
+.school-title-gold {
+  color: #c9a227;
+  text-shadow: 0 1px 2px rgba(201, 162, 39, 0.18);
 }
 
 .school-name p {
-  font-size: 16px;
+  font-size: 18px;
   margin: 2px 0 0 0;
-  color: var(--secondary, #C7613C);
+  color: var(--text-primary, #334155);
   font-weight: 500;
   text-align: left;
   letter-spacing: 0.3px;
@@ -693,7 +706,6 @@ export default {
   }
   .school-name h1 {
     font-size: 15px;
-    -webkit-text-fill-color: var(--primary, #2F5F48);
     background: none;
   }
   .school-name p {

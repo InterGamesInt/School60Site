@@ -22,6 +22,7 @@
       <AnnouncementsManager v-if="activeTab === 'announcements'" />
       <NewsManager v-if="activeTab === 'news'" />
       <NavigationManager v-if="activeTab === 'navigation'" />
+      <SchoolDocumentsManager v-if="activeTab === 'school-documents'" />
     </div>
   </div>
 </template>
@@ -34,9 +35,17 @@ import EmployeesManager from '../components/admin/EmployeesManager.vue';
 import AnnouncementsManager from '../components/admin/AnnouncementsManager.vue';
 import NewsManager from '../components/admin/NewsManager.vue';
 import NavigationManager from '../components/admin/NavigationManager.vue';
+import SchoolDocumentsManager from '../components/admin/SchoolDocumentsManager.vue';
 
 export default {
-  components: { UsersManager, EmployeesManager, AnnouncementsManager, NewsManager, NavigationManager },
+  components: {
+    UsersManager,
+    EmployeesManager,
+    AnnouncementsManager,
+    NewsManager,
+    NavigationManager,
+    SchoolDocumentsManager
+  },
   data() {
     return {
       activeTab: 'news',
@@ -45,7 +54,8 @@ export default {
         { id: 'employees', name: 'Команда' },
         { id: 'announcements', name: 'Оголошення' },
         { id: 'news', name: 'Новини' },
-        { id: 'navigation', name: 'Навігація' }
+        { id: 'navigation', name: 'Навігація' },
+        { id: 'school-documents', name: 'Документація' }
       ]
     };
   },
