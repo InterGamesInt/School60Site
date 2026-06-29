@@ -11,6 +11,8 @@ import SurveyParents from '../views/SurveyParents.vue';
 import SurveyTeachers from '../views/SurveyTeachers.vue';
 import FoodPage from '../views/FoodPage.vue';
 import AntiBullyingPage from '../views/AntiBullyingPage.vue';
+import FirstGradeAdmissionPage from '../views/FirstGradeAdmissionPage.vue';
+import NormativeDocumentsPage from '../views/NormativeDocumentsPage.vue';
 import { auth } from '../firebase';
 
 const routes = [
@@ -19,6 +21,8 @@ const routes = [
   { path: '/news', component: NewsPage },
   { path: '/food', component: FoodPage },
   { path: '/anti-bullying', component: AntiBullyingPage },
+  { path: '/first-grade-admission', component: FirstGradeAdmissionPage },
+  { path: '/regulations', component: NormativeDocumentsPage },
   { path: '/team', component: TeamPage },        // <-- додати
   { path: '/contacts', component: ContactsPage }, // <-- додати
   { path: '/survey-student', component: SurveyStudent },

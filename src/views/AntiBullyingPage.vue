@@ -64,7 +64,7 @@
                 rel="noopener noreferrer"
               >
                 <strong>{{ document.title }}</strong>
-                <span>{{ document.status }}</span>
+                <span>{{ document.description }}</span>
               </a>
             </div>
           </article>
@@ -125,6 +125,10 @@ import { db } from '../firebase';
 import bullying2 from '../assets/bullying2.png';
 import bullying3 from '../assets/bullying3.png';
 import { loadPdfObjectUrlFromFirestoreChunks, mergeSchoolDocuments } from '../data/schoolDocuments';
+import {
+  getSiteLinksForSection,
+  mergeSiteLinkSections
+} from '../data/siteLinks';
 
 export default {
   name: 'AntiBullyingPage',
@@ -176,28 +180,7 @@ export default {
           value: 'м. Київ, просп. Повітрофлотський, 41, каб. 268; 207-09-10'
         }
       ],
-      documents: [
-        {
-          title: 'Закон України № 2657-VIII щодо протидії булінгу (цькуванню)',
-          status: 'Чинний. Поточна редакція - прийняття від 18.12.2018.',
-          url: 'https://zakon.rada.gov.ua/laws/show/2657-19#Text'
-        },
-        {
-          title: 'Наказ МОН України від 28.12.2019 № 1646: реагування на випадки булінгу та заходи виховного впливу',
-          status: 'Чинний. Поточна редакція - прийняття від 28.12.2019.',
-          url: 'https://zakon.rada.gov.ua/laws/show/z0111-20#Text'
-        },
-        {
-          title: 'Рекомендації для закладів освіти щодо застосування норм Закону України № 2657-VIII',
-          status: 'Методичні рекомендації до Закону України "Про внесення змін до деяких законодавчих актів України щодо протидії булінгу (цькуванню)".',
-          url: 'https://drive.google.com/file/d/1hRE8jdvVacpWYIOo9_Y4M0DM4w41AY05/view'
-        },
-        {
-          title: 'Лист МОН від 14.08.2020 № 1/9-436: безпечне освітнє середовище та протидія булінгу',
-          status: 'Лист "Про створення безпечного освітнього середовища в закладі освіти та попередження і протидії булінгу (цькуванню)".',
-          url: 'https://drive.google.com/file/d/1nTDyYVLH7KHAyJYV-rbSa_NZ_ZrEBDxA/view'
-        }
-      ],
+      documents: getSiteLinksForSection(mergeSiteLinkSections(), 'antiBullying'),
       pdfDocuments: mergeSchoolDocuments(),
       galleryImages: [
         {
@@ -214,6 +197,7 @@ export default {
         }
       ],
       unsubscribeSchoolDocuments: null,
+      unsubscribeSiteLinks: null,
       documentsLoadRequestId: 0,
       pdfObjectUrls: []
     };
@@ -236,10 +220,28 @@ export default {
         this.pdfDocuments = mergeSchoolDocuments();
       }
     );
+
+    this.unsubscribeSiteLinks = onSnapshot(
+      doc(db, 'siteSettings', 'siteLinks'),
+      (snapshot) => {
+        const savedSections = snapshot.exists() ? snapshot.data().sections || {} : {};
+        this.documents = getSiteLinksForSection(
+          mergeSiteLinkSections(savedSections),
+          'antiBullying'
+        );
+      },
+      (error) => {
+        console.error('Site links loading error:', error);
+        this.documents = getSiteLinksForSection(mergeSiteLinkSections(), 'antiBullying');
+      }
+    );
   },
   beforeUnmount() {
     if (this.unsubscribeSchoolDocuments) {
       this.unsubscribeSchoolDocuments();
+    }
+    if (this.unsubscribeSiteLinks) {
+      this.unsubscribeSiteLinks();
     }
     this.revokePdfObjectUrls();
   },
@@ -518,6 +520,19 @@ export default {
   border-radius: 8px;
 }
 
+.support-card .phone-row {
+  color: var(--on-support-accent, #ffffff);
+  background: var(--support-accent, #B2324F);
+  border-color: color-mix(in srgb, var(--support-accent, #B2324F) 76%, var(--heading, #1F352B));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--support-accent, #B2324F) 30%, transparent);
+}
+
+.support-card .phone-row:hover {
+  border-color: color-mix(in srgb, var(--support-accent, #B2324F) 68%, var(--heading, #1F352B));
+  box-shadow:
+    0 12px 26px color-mix(in srgb, var(--support-accent, #B2324F) 45%, transparent);
+}
+
 .phone-row:hover,
 .document-link:hover {
   border-color: var(--secondary, #B95636);
@@ -547,6 +562,20 @@ export default {
 .support-card .phone-row span {
   font-size: 0.78rem;
   line-height: 1.38;
+}
+
+.support-card .phone-row span {
+  width: fit-content;
+  padding: 4px 7px;
+  color: var(--on-support-accent, #ffffff);
+  background: color-mix(in srgb, var(--on-support-accent, #ffffff) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--on-support-accent, #ffffff) 36%, transparent);
+  border-radius: 5px;
+  font-weight: 800;
+}
+
+.support-card .phone-row strong {
+  color: var(--on-support-accent, #ffffff);
 }
 
 .pdf-details {

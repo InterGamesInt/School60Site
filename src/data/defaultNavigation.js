@@ -13,11 +13,11 @@ export const defaultNavigation = [
       { id: 'team', label: 'Команда', path: '/team', visible: true },
       { id: 'departments', label: 'Кафедри', path: '#', visible: true },
       { id: 'vacancies', label: 'Вакансії', path: '#', visible: true },
-      { id: 'first-grade', label: 'Правила прийому до 1 класу', path: '#', visible: true },
+      { id: 'first-grade', label: 'Правила прийому до 1 класу', path: '/first-grade-admission', visible: true },
       { id: 'student-code', label: 'Кодекс учня', path: '#', visible: true },
       { id: 'transparency', label: 'Прозорість та інформаційна відкритість', path: '#', visible: true },
       { id: 'statute', label: 'Статут', path: '#', visible: true },
-      { id: 'regulations', label: 'Нормативні документи', path: '#', visible: true }
+      { id: 'regulations', label: 'Нормативні документи', path: '/regulations', visible: true }
     ]
   },
   {
