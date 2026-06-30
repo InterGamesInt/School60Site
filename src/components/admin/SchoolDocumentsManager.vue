@@ -2,19 +2,32 @@
   <div class="manager school-documents-manager">
     <h2>Шкільна документація</h2>
     <p class="manager-note">
-      Завантажте PDF-файли для документів, які відображаються у PDF-рідерах на сторінці "Школа без булінгу".
+      Додавайте PDF-файли для сторінки «Школа без булінгу», змінюйте їхні назви та описи.
       Файли зберігаються у Firestore, тому краще використовувати стиснуті PDF.
     </p>
 
     <div v-if="loading" class="state-box">Завантаження документів...</div>
 
-    <div v-else class="documents-list">
-      <section v-for="document in documents" :key="document.id" class="document-card">
+    <template v-else>
+      <div class="manager-toolbar">
+        <button class="add-button" type="button" @click="addDocument">+ Додати PDF-документ</button>
+        <button class="save-metadata-button" type="button" :disabled="saving" @click="saveDocuments">
+          {{ saving ? 'Збереження...' : 'Зберегти назви та описи' }}
+        </button>
+      </div>
+
+      <div class="documents-list">
+      <section v-for="(document, index) in documents" :key="document.id" class="document-card">
         <div class="document-main">
-          <div>
-            <h3>{{ document.title }}</h3>
-            <p>{{ document.description }}</p>
-          </div>
+          <span class="document-index">Документ {{ index + 1 }}</span>
+          <label class="document-field">
+            <span>Назва</span>
+            <input v-model="document.title" type="text" placeholder="Назва PDF-документа" />
+          </label>
+          <label class="document-field">
+            <span>Опис</span>
+            <textarea v-model="document.description" rows="3" placeholder="Коротко опишіть документ"></textarea>
+          </label>
 
           <div v-if="document.fileName" class="current-file">
             <strong>{{ document.fileName || 'PDF-документ' }}</strong>
@@ -50,13 +63,26 @@
             type="button"
             class="remove-button"
             :disabled="isUploading(document.id)"
-            @click="clearDocument(document)"
+            @click="clearDocumentFile(document)"
           >
-            Прибрати
+            Прибрати файл
+          </button>
+          <button
+            type="button"
+            class="delete-document-button"
+            :disabled="isUploading(document.id)"
+            @click="removeDocument(document, index)"
+          >
+            Видалити документ
           </button>
         </div>
       </section>
-    </div>
+      <div v-if="documents.length === 0" class="state-box">
+        PDF-документів поки немає.
+      </div>
+      </div>
+      <p v-if="message" class="save-message" :class="{ error: saveError }">{{ message }}</p>
+    </template>
   </div>
 </template>
 
@@ -66,7 +92,6 @@ import { db } from '../../firebase';
 import {
   clearFirestorePdfDocument,
   mergeSchoolDocuments,
-  schoolDocumentSlots,
   uploadPdfToFirestoreChunks
 } from '../../data/schoolDocuments';
 
@@ -74,28 +99,27 @@ export default {
   name: 'SchoolDocumentsManager',
   data() {
     return {
-      documentsById: {},
+      documents: [],
       loading: true,
+      saving: false,
       uploading: {},
       uploadProgress: {},
-      unsubscribeDocuments: null
+      unsubscribeDocuments: null,
+      message: '',
+      saveError: false
     };
-  },
-  computed: {
-    documents() {
-      return mergeSchoolDocuments(this.documentsById);
-    }
   },
   mounted() {
     this.unsubscribeDocuments = onSnapshot(
       doc(db, 'siteSettings', 'schoolDocuments'),
       (snapshot) => {
-        this.documentsById = snapshot.exists() ? snapshot.data().documents || {} : {};
+        const data = snapshot.exists() ? snapshot.data() : {};
+        this.documents = mergeSchoolDocuments(data.documents || {}, data.documentOrder);
         this.loading = false;
       },
       (error) => {
         console.error('School documents loading error:', error);
-        this.documentsById = {};
+        this.documents = mergeSchoolDocuments();
         this.loading = false;
       }
     );
@@ -106,6 +130,30 @@ export default {
     }
   },
   methods: {
+    createId() {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return `pdf-${crypto.randomUUID()}`;
+      }
+
+      return `pdf-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    },
+    addDocument() {
+      this.documents.push({
+        id: this.createId(),
+        title: 'Новий PDF-документ',
+        description: '',
+        fileName: '',
+        sourceType: '',
+        size: 0,
+        chunkCount: 0,
+        chunkSize: 0,
+        dataPath: '',
+        updatedAt: null,
+        src: ''
+      });
+      this.message = 'Новий документ додано. Заповніть назву, опис і завантажте файл.';
+      this.saveError = false;
+    },
     isUploading(id) {
       return Boolean(this.uploading[id]);
     },
@@ -159,12 +207,8 @@ export default {
         const metadata = await uploadPdfToFirestoreChunks(db, documentItem, file, {
           onProgress: progress => this.setUploadProgress(documentItem.id, progress)
         });
-        const nextDocuments = {
-          ...this.documentsById,
-          [documentItem.id]: metadata
-        };
-
-        await this.saveDocuments(nextDocuments);
+        Object.assign(documentItem, metadata);
+        await this.saveDocuments();
       } catch (error) {
         console.error('School document upload error:', error);
         alert('Не вдалося завантажити PDF-файл.');
@@ -177,16 +221,24 @@ export default {
         });
       }
     },
-    async clearDocument(documentItem) {
+    async clearDocumentFile(documentItem) {
       if (!confirm(`Прибрати PDF для "${documentItem.title}"?`)) return;
 
       this.setUploading(documentItem.id, true);
 
       try {
         await clearFirestorePdfDocument(db, documentItem.id);
-        const nextDocuments = { ...this.documentsById };
-        delete nextDocuments[documentItem.id];
-        await this.saveDocuments(nextDocuments);
+        Object.assign(documentItem, {
+          fileName: '',
+          sourceType: '',
+          size: 0,
+          chunkCount: 0,
+          chunkSize: 0,
+          dataPath: '',
+          updatedAt: null,
+          src: ''
+        });
+        await this.saveDocuments();
       } catch (error) {
         console.error('School document clearing error:', error);
         alert('Не вдалося прибрати PDF-файл.');
@@ -198,16 +250,70 @@ export default {
         });
       }
     },
-    async saveDocuments(nextDocuments) {
-      await setDoc(
-        doc(db, 'siteSettings', 'schoolDocuments'),
-        {
-          documents: nextDocuments,
-          documentOrder: schoolDocumentSlots.map(item => item.id),
-          updatedAt: Timestamp.now()
-        }
+    async removeDocument(documentItem, index) {
+      if (!confirm(`Повністю видалити документ "${documentItem.title}"?`)) return;
+
+      this.setUploading(documentItem.id, true);
+
+      try {
+        await clearFirestorePdfDocument(db, documentItem.id);
+        this.documents.splice(index, 1);
+        await this.saveDocuments();
+      } catch (error) {
+        console.error('School document deletion error:', error);
+        alert('Не вдалося видалити документ.');
+      } finally {
+        this.setUploading(documentItem.id, false);
+      }
+    },
+    async saveDocuments() {
+      const invalidDocument = this.documents.find(item => !item.title.trim());
+      if (invalidDocument) {
+        this.message = 'Кожен документ повинен мати назву.';
+        this.saveError = true;
+        return;
+      }
+
+      this.saving = true;
+      this.message = '';
+      this.saveError = false;
+
+      const documentsById = Object.fromEntries(
+        this.documents.map(item => [
+          item.id,
+          {
+            title: item.title.trim(),
+            description: item.description.trim(),
+            fileName: item.fileName || '',
+            contentType: item.contentType || 'application/pdf',
+            sourceType: item.sourceType || '',
+            size: item.size || 0,
+            chunkCount: item.chunkCount || 0,
+            chunkSize: item.chunkSize || 0,
+            dataPath: item.dataPath || '',
+            updatedAt: item.updatedAt || null,
+            src: item.src || ''
+          }
+        ])
       );
-      this.documentsById = nextDocuments;
+
+      try {
+        await setDoc(
+          doc(db, 'siteSettings', 'schoolDocuments'),
+          {
+            documents: documentsById,
+            documentOrder: this.documents.map(item => item.id),
+            updatedAt: Timestamp.now()
+          }
+        );
+        this.message = 'PDF-документи успішно збережено.';
+      } catch (error) {
+        console.error('School documents saving error:', error);
+        this.message = 'Не вдалося зберегти PDF-документи.';
+        this.saveError = true;
+      } finally {
+        this.saving = false;
+      }
     },
     formatFileSize(bytes) {
       if (!bytes) return '';
@@ -270,6 +376,38 @@ export default {
   border-radius: 8px;
 }
 
+.manager-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.add-button,
+.save-metadata-button {
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.add-button {
+  color: var(--on-primary, #ffffff);
+  background: var(--primary, #2F5F48);
+}
+
+.save-metadata-button {
+  color: var(--on-secondary, #ffffff);
+  background: var(--secondary, #C7613C);
+}
+
+.save-metadata-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .documents-list {
   display: grid;
   gap: 16px;
@@ -291,16 +429,34 @@ export default {
   gap: 12px;
 }
 
-.document-main h3 {
-  margin: 0 0 6px;
-  color: var(--text-primary, #1f352b);
-  font-size: 1.16rem;
+.document-index {
+  color: var(--secondary, #C7613C);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.document-main p {
-  margin: 0;
+.document-field {
+  display: grid;
+  gap: 7px;
+}
+
+.document-field > span {
   color: var(--text-secondary, #485d54);
-  line-height: 1.55;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.document-field input,
+.document-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  color: var(--text-primary, #1f352b);
+  background: var(--surface-elevated, #ffffff);
+  border: 1px solid var(--border, #d9e4dd);
+  border-radius: 8px;
+  resize: vertical;
 }
 
 .current-file {
@@ -365,7 +521,8 @@ export default {
 
 .upload-button,
 .preview-link,
-.remove-button {
+.remove-button,
+.delete-document-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -399,16 +556,33 @@ export default {
   background: var(--btn-cancel-bg, #e9ecef);
 }
 
+.delete-document-button {
+  color: var(--on-secondary, #ffffff);
+  background: var(--secondary, #C7613C);
+}
+
 .upload-button:hover:not(.disabled),
 .preview-link:hover,
-.remove-button:hover:not(:disabled) {
+.remove-button:hover:not(:disabled),
+.delete-document-button:hover:not(:disabled) {
   transform: translateY(-1px);
 }
 
 .upload-button.disabled,
-.remove-button:disabled {
+.remove-button:disabled,
+.delete-document-button:disabled {
   cursor: wait;
   opacity: 0.68;
+}
+
+.save-message {
+  margin: 18px 0 0;
+  color: var(--primary, #2F5F48);
+  font-weight: 700;
+}
+
+.save-message.error {
+  color: var(--secondary, #C7613C);
 }
 
 @media (max-width: 840px) {
@@ -433,6 +607,7 @@ export default {
   .upload-button,
   .preview-link,
   .remove-button,
+  .delete-document-button,
   .upload-progress {
     width: 100%;
     min-width: 0;

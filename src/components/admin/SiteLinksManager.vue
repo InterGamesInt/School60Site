@@ -10,13 +10,26 @@
     <div v-else class="sections-list">
       <section v-for="section in sections" :key="section.id" class="links-section">
         <div class="section-heading">
-          <h3>{{ section.title }}</h3>
-          <p>{{ section.description }}</p>
+          <div>
+            <h3>{{ section.title }}</h3>
+            <p>{{ section.description }}</p>
+          </div>
+          <button class="btn-add-link" type="button" @click="addLink(section)">
+            + Додати посилання
+          </button>
         </div>
 
         <div class="links-list">
           <article v-for="(link, index) in section.links" :key="link.id" class="link-editor">
             <div class="link-number">{{ index + 1 }}</div>
+            <button
+              class="remove-link"
+              type="button"
+              :aria-label="`Видалити посилання ${link.title || index + 1}`"
+              @click="removeLink(section, index)"
+            >
+              ×
+            </button>
 
             <label>
               <span>Назва документа</span>
@@ -33,6 +46,9 @@
               <input v-model="link.url" type="url" placeholder="https://..." />
             </label>
           </article>
+          <p v-if="section.links.length === 0" class="empty-links">
+            Посилань поки немає.
+          </p>
         </div>
       </section>
     </div>
@@ -94,6 +110,31 @@ export default {
     }
   },
   methods: {
+    createId(prefix = 'link') {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return `${prefix}-${crypto.randomUUID()}`;
+      }
+
+      return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    },
+    addLink(section) {
+      section.links.push({
+        id: this.createId(section.id),
+        title: '',
+        description: '',
+        url: ''
+      });
+      this.message = '';
+      this.saveError = false;
+    },
+    removeLink(section, index) {
+      const link = section.links[index];
+      if (!confirm(`Видалити посилання "${link?.title || 'Без назви'}"?`)) return;
+
+      section.links.splice(index, 1);
+      this.message = 'Посилання видалено у формі. Натисніть «Зберегти зміни».';
+      this.saveError = false;
+    },
     restoreDefaults() {
       if (!confirm('Відновити початкові значення всіх посилань?')) return;
 
@@ -102,6 +143,16 @@ export default {
       this.saveError = false;
     },
     async saveLinks() {
+      const hasEmptyFields = this.sections.some(section =>
+        section.links.some(link => !link.title.trim() || !link.url.trim())
+      );
+
+      if (hasEmptyFields) {
+        this.message = 'Заповніть назву та адресу кожного посилання.';
+        this.saveError = true;
+        return;
+      }
+
       const hasInvalidUrl = this.sections.some(section =>
         section.links.some(link => !this.isValidUrl(link.url))
       );
@@ -190,9 +241,24 @@ export default {
 }
 
 .section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 18px 20px;
   background: var(--surface-soft, #f8faf7);
   border-bottom: 1px solid var(--border, #d9e4dd);
+}
+
+.btn-add-link {
+  flex: 0 0 auto;
+  padding: 9px 16px;
+  color: var(--on-primary, #ffffff);
+  background: var(--primary, #2F5F48);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
 }
 
 .section-heading h3 {
@@ -235,6 +301,32 @@ export default {
   border-radius: 50%;
   font-size: 0.78rem;
   font-weight: 700;
+}
+
+.remove-link {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  color: var(--secondary, #C7613C);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.remove-link:hover {
+  background: color-mix(in srgb, var(--secondary, #C7613C) 10%, transparent);
+}
+
+.empty-links {
+  margin: 0;
+  padding: 22px;
+  color: var(--text-muted, #607168);
+  text-align: center;
 }
 
 .link-editor label {
@@ -338,6 +430,11 @@ export default {
 
   .link-editor label:last-child {
     grid-column: auto;
+  }
+
+  .section-heading {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .form-actions {

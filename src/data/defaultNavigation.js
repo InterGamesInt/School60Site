@@ -12,7 +12,7 @@ export const defaultNavigation = [
     children: [
       { id: 'team', label: 'Команда', path: '/team', visible: true },
       { id: 'departments', label: 'Кафедри', path: '#', visible: true },
-      { id: 'vacancies', label: 'Вакансії', path: '#', visible: true },
+      { id: 'vacancies', label: 'Вакансії', path: '/vacancies', visible: true },
       { id: 'first-grade', label: 'Правила прийому до 1 класу', path: '/first-grade-admission', visible: true },
       { id: 'student-code', label: 'Кодекс учня', path: '#', visible: true },
       { id: 'transparency', label: 'Прозорість та інформаційна відкритість', path: '#', visible: true },
@@ -27,8 +27,8 @@ export const defaultNavigation = [
     children: [
       { id: 'school-today', label: 'Шкільне сьогодення', path: '#', visible: true },
       { id: 'anti-bullying', label: 'Школа без булінгу', path: '/anti-bullying', visible: true },
-      { id: 'psychologist', label: 'Практичний психолог', path: '#', visible: true },
-      { id: 'social-teacher', label: 'Соціальний педагог', path: '#', visible: true },
+      { id: 'psychologist', label: 'Практичний психолог', path: '/practical-psychologist', visible: true },
+      { id: 'social-teacher', label: 'Соціальний педагог', path: '/social-pedagogue', visible: true },
       { id: 'domestic-violence', label: 'Домашнє насильство', path: '#', visible: true },
       { id: 'student-government', label: 'Учнівське самоврядування', path: '#', visible: true },
       { id: 'life-safety', label: 'Безпека життєдіяльності', path: '#', visible: true }

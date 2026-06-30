@@ -106,21 +106,21 @@ export function cloneSiteLinkSections() {
 
 export function mergeSiteLinkSections(savedSections = {}) {
   return defaultSiteLinkSections.map(section => {
-    const savedSection = savedSections?.[section.id] || {};
-    const savedLinks = Array.isArray(savedSection.links) ? savedSection.links : [];
+    const savedSection = savedSections?.[section.id];
+    const hasSavedLinks = Array.isArray(savedSection?.links);
 
     return {
       ...section,
-      links: section.links.map(link => {
-        const savedLink = savedLinks.find(item => item?.id === link.id) || {};
-
-        return {
-          id: link.id,
-          title: typeof savedLink.title === 'string' ? savedLink.title : link.title,
-          description: typeof savedLink.description === 'string' ? savedLink.description : link.description,
-          url: typeof savedLink.url === 'string' ? savedLink.url : link.url
-        };
-      })
+      links: hasSavedLinks
+        ? savedSection.links
+          .filter(link => link && typeof link === 'object')
+          .map((link, index) => ({
+            id: String(link.id || `${section.id}-${index + 1}`),
+            title: String(link.title || ''),
+            description: String(link.description || ''),
+            url: String(link.url || '')
+          }))
+        : section.links.map(cloneLink)
     };
   });
 }

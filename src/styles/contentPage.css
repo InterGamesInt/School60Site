@@ -1,0 +1,67 @@
+.content-page {
+  min-height: 100%;
+  color: var(--text);
+  background: var(--page-bg);
+}
+
+.content-page .container {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.content-page .page-intro {
+  padding: 72px 0 56px;
+  background: linear-gradient(135deg, var(--page-gradient-start), var(--section-bg-alt));
+  border-bottom: 1px solid var(--border);
+}
+
+.content-page .page-badge {
+  display: inline-flex;
+  margin-bottom: 12px;
+  color: var(--secondary);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.content-page .page-intro h1 {
+  margin: 0 0 12px;
+  color: var(--heading);
+  font-size: clamp(2.1rem, 7vw, 3rem);
+  line-height: 1.1;
+}
+
+.content-page .page-intro p {
+  max-width: 700px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+
+.content-page .content-section {
+  padding: 64px 0;
+}
+
+.content-page .empty-state {
+  padding: 34px;
+  color: var(--text-muted);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .content-page .container {
+    padding: 0 18px;
+  }
+
+  .content-page .page-intro,
+  .content-page .content-section {
+    padding: 46px 0;
+  }
+}

@@ -36,12 +36,24 @@ export const schoolDocumentSlots = [
   }
 ];
 
-export function mergeSchoolDocuments(savedDocuments = {}) {
-  return schoolDocumentSlots.map(slot => {
-    const savedDocument = savedDocuments?.[slot.id] || {};
+export function mergeSchoolDocuments(savedDocuments = {}, documentOrder) {
+  const defaultIds = schoolDocumentSlots.map(slot => slot.id);
+  const savedIds = Object.keys(savedDocuments || {});
+  const orderedIds = Array.isArray(documentOrder)
+    ? documentOrder.map(String)
+    : [...defaultIds, ...savedIds.filter(id => !defaultIds.includes(id))];
+  const slotsById = new Map(schoolDocumentSlots.map(slot => [slot.id, slot]));
+
+  return [...new Set(orderedIds)].map(id => {
+    const slot = slotsById.get(id) || {};
+    const savedDocument = savedDocuments?.[id] || {};
 
     return {
-      ...slot,
+      id,
+      title: savedDocument.title || slot.title || 'PDF-документ',
+      description: typeof savedDocument.description === 'string'
+        ? savedDocument.description
+        : slot.description || '',
       fileName: savedDocument.fileName || '',
       sourceType: savedDocument.sourceType || savedDocument.storageType || '',
       size: savedDocument.size || 0,
@@ -151,6 +163,7 @@ export async function uploadPdfToFirestoreChunks(db, documentSlot, file, options
 
   const metadata = {
     title: documentSlot.title,
+    description: documentSlot.description || '',
     fileName: file.name,
     contentType: 'application/pdf',
     size: file.size,

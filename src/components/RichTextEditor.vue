@@ -1457,6 +1457,7 @@ export default {
   line-height: 1.8;
   color: var(--text-primary);
   font-size: 16px;
+  font-weight: 400;
   background: var(--surface, #ffffff);
   border-radius: 4px;
   box-shadow: var(--shadow-card, 0 8px 24px rgba(15, 23, 42, 0.08));

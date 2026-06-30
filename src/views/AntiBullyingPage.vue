@@ -26,9 +26,18 @@
               </div>
 
               <div class="pdf-accordion">
-                <details v-for="document in pdfDocuments" :key="document.id" class="pdf-details">
-                  <summary>{{ document.title }}</summary>
+                <details
+                  v-for="document in pdfDocuments"
+                  :key="document.id"
+                  class="pdf-details"
+                  @toggle="handlePdfToggle(document, $event)"
+                >
+                  <summary>
+                    <span>{{ document.title }}</span>
+                    <small v-if="document.description">{{ document.description }}</small>
+                  </summary>
                   <PdfReader
+                    v-if="openDocumentId === document.id"
                     :src="document.src"
                     :title="document.title"
                     :loading="document.isLoading"
@@ -199,7 +208,8 @@ export default {
       unsubscribeSchoolDocuments: null,
       unsubscribeSiteLinks: null,
       documentsLoadRequestId: 0,
-      pdfObjectUrls: []
+      pdfObjectUrls: [],
+      openDocumentId: null
     };
   },
   computed: {
@@ -211,8 +221,8 @@ export default {
     this.unsubscribeSchoolDocuments = onSnapshot(
       doc(db, 'siteSettings', 'schoolDocuments'),
       (snapshot) => {
-        const savedDocuments = snapshot.exists() ? snapshot.data().documents || {} : {};
-        this.applySchoolDocuments(savedDocuments);
+        const data = snapshot.exists() ? snapshot.data() : {};
+        this.applySchoolDocuments(data.documents || {}, data.documentOrder);
       },
       (error) => {
         console.error('School documents loading error:', error);
@@ -250,52 +260,53 @@ export default {
       this.pdfObjectUrls.forEach(url => URL.revokeObjectURL(url));
       this.pdfObjectUrls = [];
     },
-    async applySchoolDocuments(savedDocuments) {
-      const requestId = this.documentsLoadRequestId + 1;
-      this.documentsLoadRequestId = requestId;
-
+    applySchoolDocuments(savedDocuments, documentOrder) {
+      this.documentsLoadRequestId += 1;
       this.revokePdfObjectUrls();
-
-      const documents = mergeSchoolDocuments(savedDocuments).map(documentItem => ({
+      this.openDocumentId = null;
+      this.pdfDocuments = mergeSchoolDocuments(savedDocuments, documentOrder).map(documentItem => ({
         ...documentItem,
-        isLoading: !documentItem.src && documentItem.sourceType === 'firestore-chunks' && Boolean(documentItem.chunkCount)
+        isLoading: false
       }));
-      this.pdfDocuments = documents;
-      const createdObjectUrls = [];
+    },
+    async handlePdfToggle(documentItem, event) {
+      if (!event.currentTarget.open) {
+        if (this.openDocumentId === documentItem.id) {
+          this.openDocumentId = null;
+        }
+        return;
+      }
 
-      const hydratedDocuments = await Promise.all(
-        documents.map(async documentItem => {
-          if (documentItem.src || documentItem.sourceType !== 'firestore-chunks' || !documentItem.chunkCount) {
-            return documentItem;
-          }
+      this.openDocumentId = documentItem.id;
 
-          try {
-            const src = await loadPdfObjectUrlFromFirestoreChunks(db, documentItem.id);
+      if (
+        documentItem.src ||
+        documentItem.isLoading ||
+        documentItem.sourceType !== 'firestore-chunks' ||
+        !documentItem.chunkCount
+      ) {
+        return;
+      }
 
-            if (src) {
-              createdObjectUrls.push(src);
-            }
+      const requestId = this.documentsLoadRequestId;
+      documentItem.isLoading = true;
 
-            return {
-              ...documentItem,
-              src,
-              isLoading: false
-            };
-          } catch (error) {
-            console.error('PDF chunks loading error:', error);
-            return {
-              ...documentItem,
-              isLoading: false
-            };
-          }
-        })
-      );
+      try {
+        const src = await loadPdfObjectUrlFromFirestoreChunks(db, documentItem.id);
 
-      if (this.documentsLoadRequestId === requestId) {
-        this.pdfObjectUrls = createdObjectUrls;
-        this.pdfDocuments = hydratedDocuments;
-      } else {
-        createdObjectUrls.forEach(url => URL.revokeObjectURL(url));
+        if (requestId !== this.documentsLoadRequestId) {
+          if (src) URL.revokeObjectURL(src);
+          return;
+        }
+
+        documentItem.src = src;
+        if (src) this.pdfObjectUrls.push(src);
+      } catch (error) {
+        console.error('PDF chunks loading error:', error);
+      } finally {
+        if (requestId === this.documentsLoadRequestId) {
+          documentItem.isLoading = false;
+        }
       }
     }
   }
@@ -598,6 +609,20 @@ export default {
   font-weight: 700;
   font-size: 1.04rem;
   list-style: none;
+}
+
+.pdf-details summary span,
+.pdf-details summary small {
+  display: block;
+  padding-right: 32px;
+}
+
+.pdf-details summary small {
+  margin-top: 6px;
+  color: var(--text-secondary, #485D54);
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.45;
 }
 
 .pdf-details summary::-webkit-details-marker {

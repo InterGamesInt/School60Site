@@ -24,6 +24,8 @@
       <NavigationManager v-if="activeTab === 'navigation'" />
       <SchoolDocumentsManager v-if="activeTab === 'school-documents'" />
       <SiteLinksManager v-if="activeTab === 'site-links'" />
+      <VacanciesManager v-if="activeTab === 'vacancies'" />
+      <InformationPagesManager v-if="activeTab === 'specialists'" />
     </div>
   </div>
 </template>
@@ -38,6 +40,8 @@ import NewsManager from '../components/admin/NewsManager.vue';
 import NavigationManager from '../components/admin/NavigationManager.vue';
 import SchoolDocumentsManager from '../components/admin/SchoolDocumentsManager.vue';
 import SiteLinksManager from '../components/admin/SiteLinksManager.vue';
+import VacanciesManager from '../components/admin/VacanciesManager.vue';
+import InformationPagesManager from '../components/admin/InformationPagesManager.vue';
 
 export default {
   components: {
@@ -47,7 +51,9 @@ export default {
     NewsManager,
     NavigationManager,
     SchoolDocumentsManager,
-    SiteLinksManager
+    SiteLinksManager,
+    VacanciesManager,
+    InformationPagesManager
   },
   data() {
     return {
@@ -59,7 +65,9 @@ export default {
         { id: 'news', name: 'Новини' },
         { id: 'navigation', name: 'Навігація' },
         { id: 'school-documents', name: 'Документація' },
-        { id: 'site-links', name: 'Посилання' }
+        { id: 'site-links', name: 'Посилання' },
+        { id: 'vacancies', name: 'Вакансії' },
+        { id: 'specialists', name: 'Психолог і соцпедагог' }
       ]
     };
   },

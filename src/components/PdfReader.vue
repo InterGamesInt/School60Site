@@ -7,6 +7,7 @@
 
     <div
       v-if="resolvedSrc && renderWithPdfJs"
+      ref="pdfShell"
       class="pdf-canvas-shell"
       :style="{ maxHeight: readerHeight }"
     >
@@ -58,8 +59,9 @@
 </template>
 
 <script>
-import * as pdfjsLib from 'pdfjs-dist';
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
+import { markRaw } from 'vue';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.mjs?url';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -98,7 +100,11 @@ export default {
       removeMobileListener: null,
       pdfRendering: false,
       pdfRenderError: '',
-      renderRequestId: 0
+      renderRequestId: 0,
+      activeLoadingTask: null,
+      activePdfDocument: null,
+      pageObserver: null,
+      pageRenderTasks: markRaw(new Map())
     };
   },
   computed: {
@@ -134,22 +140,157 @@ export default {
     resolvedSrc() {
       this.renderPdfForMobile();
     },
-    renderWithPdfJs() {
+    isMobileViewport() {
       this.renderPdfForMobile();
     }
   },
   mounted() {
     this.setupMobileWatcher();
-    this.renderPdfForMobile();
   },
   beforeUnmount() {
     this.renderRequestId += 1;
+    this.disposePdfResources();
 
     if (this.removeMobileListener) {
       this.removeMobileListener();
     }
   },
   methods: {
+    disposePdfResources() {
+      if (this.pageObserver) {
+        this.pageObserver.disconnect();
+        this.pageObserver = null;
+      }
+      this.pageRenderTasks.forEach(renderTask => renderTask.cancel());
+      this.pageRenderTasks.clear();
+
+      if (typeof this.activePdfDocument?.destroy === 'function') {
+        this.activePdfDocument.destroy();
+        this.activePdfDocument = null;
+      } else if (typeof this.activeLoadingTask?.destroy === 'function') {
+        this.activeLoadingTask.destroy();
+      }
+      this.activePdfDocument = null;
+      this.activeLoadingTask = null;
+    },
+    async loadPdfBytes(source) {
+      if (source.startsWith('data:application/pdf')) {
+        const base64 = source.split(',')[1] || '';
+        const binary = window.atob(base64);
+        return Uint8Array.from(binary, character => character.charCodeAt(0));
+      }
+
+      const response = await fetch(source);
+      if (!response.ok) {
+        throw new Error(`PDF request failed: ${response.status}`);
+      }
+
+      return new Uint8Array(await response.arrayBuffer());
+    },
+    releasePageSlot(slot) {
+      const pageNumber = Number(slot.dataset.pageNumber);
+      const renderTask = this.pageRenderTasks.get(pageNumber);
+
+      if (renderTask) {
+        renderTask.cancel();
+        this.pageRenderTasks.delete(pageNumber);
+      }
+
+      slot.replaceChildren();
+      delete slot.dataset.rendered;
+      delete slot.dataset.rendering;
+    },
+    async renderPageSlot(slot, pdfDocument, requestId) {
+      if (
+        requestId !== this.renderRequestId ||
+        slot.dataset.rendered === 'true' ||
+        slot.dataset.rendering === 'true'
+      ) {
+        return;
+      }
+
+      const pageNumber = Number(slot.dataset.pageNumber);
+      slot.dataset.rendering = 'true';
+      let page;
+
+      try {
+        page = await pdfDocument.getPage(pageNumber);
+        if (requestId !== this.renderRequestId) return;
+
+        const baseViewport = page.getViewport({ scale: 1 });
+        const availableWidth = Math.max(slot.clientWidth, 280);
+        const scale = Math.min(1.6, availableWidth / baseViewport.width);
+        const viewport = page.getViewport({ scale });
+        const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.35);
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d', { alpha: false });
+
+        canvas.width = Math.floor(viewport.width * pixelRatio);
+        canvas.height = Math.floor(viewport.height * pixelRatio);
+        canvas.style.width = `${Math.floor(viewport.width)}px`;
+        canvas.style.height = `${Math.floor(viewport.height)}px`;
+        canvas.setAttribute('aria-label', `${this.title}, сторінка ${pageNumber}`);
+        slot.replaceChildren(canvas);
+
+        const renderTask = markRaw(page.render({
+          canvasContext: context,
+          viewport,
+          transform: pixelRatio !== 1 ? [pixelRatio, 0, 0, pixelRatio, 0, 0] : undefined
+        }));
+        this.pageRenderTasks.set(pageNumber, renderTask);
+        await renderTask.promise;
+
+        if (requestId !== this.renderRequestId) return;
+        slot.dataset.rendered = 'true';
+        this.pdfRendering = false;
+      } catch (error) {
+        if (error?.name !== 'RenderingCancelledException') {
+          throw error;
+        }
+      } finally {
+        this.pageRenderTasks.delete(pageNumber);
+        delete slot.dataset.rendering;
+        page?.cleanup();
+      }
+    },
+    observePageSlots(pdfDocument, requestId) {
+      const slots = [...this.$refs.canvasPages.querySelectorAll('.pdf-page-slot')];
+
+      if (typeof IntersectionObserver === 'undefined') {
+        slots.slice(0, 3).forEach(slot => {
+          this.renderPageSlot(slot, pdfDocument, requestId).catch(error => {
+            console.error('PDF page rendering error:', error);
+          });
+        });
+        return;
+      }
+
+      this.pageObserver = markRaw(new IntersectionObserver(
+        entries => {
+          entries.forEach(entry => {
+            const slot = entry.target;
+
+            if (entry.isIntersecting) {
+              this.renderPageSlot(slot, pdfDocument, requestId).catch(error => {
+                if (requestId !== this.renderRequestId) return;
+                console.error('PDF page rendering error:', error);
+                this.pdfRendering = false;
+                this.pdfRenderError = 'Не вдалося показати сторінку PDF. Відкрийте файл окремо.';
+              });
+            } else if (slot.dataset.rendered === 'true' || slot.dataset.rendering === 'true') {
+              this.releasePageSlot(slot);
+            }
+          });
+        },
+        {
+          root: this.$refs.pdfShell,
+          rootMargin: '900px 0px',
+          threshold: 0.01
+        }
+      ));
+
+      slots.forEach(slot => this.pageObserver.observe(slot));
+    },
     setupMobileWatcher() {
       if (typeof window === 'undefined' || !window.matchMedia) return;
 
@@ -172,6 +313,7 @@ export default {
       const requestId = this.renderRequestId + 1;
       this.renderRequestId = requestId;
       this.pdfRenderError = '';
+      this.disposePdfResources();
 
       await this.$nextTick();
 
@@ -188,8 +330,18 @@ export default {
       this.pdfRendering = true;
 
       try {
-        const loadingTask = pdfjsLib.getDocument(this.resolvedSrc);
+        const pdfBytes = await this.loadPdfBytes(this.resolvedSrc);
+        if (requestId !== this.renderRequestId) return;
+
+        const loadingTask = pdfjsLib.getDocument({
+          data: pdfBytes,
+          isEvalSupported: false,
+          useWorkerFetch: false
+        });
+        this.activeLoadingTask = markRaw(loadingTask);
         const pdfDocument = await loadingTask.promise;
+        this.activeLoadingTask = null;
+        this.activePdfDocument = markRaw(pdfDocument);
 
         for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) {
           if (requestId !== this.renderRequestId) return;
@@ -199,33 +351,27 @@ export default {
           const availableWidth = Math.max(canvasContainer.clientWidth - 4, 280);
           const scale = Math.min(1.6, availableWidth / baseViewport.width);
           const viewport = page.getViewport({ scale });
-          const pixelRatio = window.devicePixelRatio || 1;
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
+          const slot = document.createElement('div');
 
-          canvas.width = Math.floor(viewport.width * pixelRatio);
-          canvas.height = Math.floor(viewport.height * pixelRatio);
-          canvas.style.width = `${Math.floor(viewport.width)}px`;
-          canvas.style.height = `${Math.floor(viewport.height)}px`;
-          canvas.setAttribute('aria-label', `${this.title}, сторінка ${pageNumber}`);
-          canvasContainer.appendChild(canvas);
-
-          await page.render({
-            canvasContext: context,
-            viewport,
-            transform: pixelRatio !== 1 ? [pixelRatio, 0, 0, pixelRatio, 0, 0] : undefined
-          }).promise;
+          slot.className = 'pdf-page-slot';
+          slot.dataset.pageNumber = String(pageNumber);
+          slot.style.width = `${Math.floor(viewport.width)}px`;
+          slot.style.height = `${Math.floor(viewport.height)}px`;
+          slot.setAttribute('aria-label', `${this.title}, сторінка ${pageNumber}`);
+          canvasContainer.appendChild(slot);
+          page.cleanup();
         }
 
         if (requestId === this.renderRequestId) {
-          this.pdfRendering = false;
+          this.observePageSlots(pdfDocument, requestId);
         }
       } catch (error) {
         if (requestId !== this.renderRequestId) return;
 
+        this.activeLoadingTask = null;
         console.error('Mobile PDF rendering error:', error);
         this.pdfRendering = false;
-        this.pdfRenderError = 'Не вдалося показати PDF на сторінці. Спробуйте відкрити файл окремо.';
+        this.pdfRenderError = 'Не вдалося показати PDF у вбудованому переглядачі. Відкрийте файл окремо.';
       }
     }
   }
@@ -291,6 +437,19 @@ export default {
   background: #ffffff;
   border-radius: 4px;
   box-shadow: 0 8px 24px rgba(31, 53, 43, 0.14);
+}
+
+.pdf-page-slot {
+  display: grid;
+  max-width: 100%;
+  place-items: center;
+  background: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(31, 53, 43, 0.14);
+}
+
+.pdf-page-slot canvas {
+  box-shadow: none;
 }
 
 .pdf-render-state,
