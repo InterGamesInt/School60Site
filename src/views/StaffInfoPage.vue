@@ -105,6 +105,8 @@ export default {
 @import '../styles/contentPage.css';
 
 .profile-card {
+  min-width: 0;
+  max-width: 100%;
   padding: clamp(24px, 5vw, 48px);
   background: var(--surface-elevated);
   border: 1px solid var(--border);

@@ -1,6 +1,12 @@
 <template>
-  <div class="rich-text-document">
-    <div class="rich-text-content" v-html="safeHtml"></div>
+  <div
+    ref="viewport"
+    class="rich-text-viewport"
+    :style="{ '--rt-document-scale': documentScale, height: viewportHeight }"
+  >
+    <div ref="document" class="rich-text-document">
+      <div class="rich-text-content" v-html="safeHtml"></div>
+    </div>
   </div>
 </template>
 
@@ -15,24 +21,101 @@ export default {
       default: ''
     }
   },
+  data() {
+    return {
+      documentScale: 1,
+      viewportHeight: 'auto',
+      resizeObserver: null,
+      scaleFrame: null
+    };
+  },
   computed: {
     safeHtml() {
       return sanitizeRichText(this.html);
+    }
+  },
+  watch: {
+    safeHtml() {
+      this.$nextTick(this.scheduleScaleUpdate);
+    }
+  },
+  mounted() {
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(this.scheduleScaleUpdate);
+      this.resizeObserver.observe(this.$refs.viewport);
+      this.resizeObserver.observe(this.$refs.document);
+    }
+
+    this.$refs.viewport.addEventListener('load', this.scheduleScaleUpdate, true);
+    window.addEventListener('resize', this.scheduleScaleUpdate);
+    this.$nextTick(this.scheduleScaleUpdate);
+  },
+  beforeUnmount() {
+    if (this.scaleFrame) cancelAnimationFrame(this.scaleFrame);
+    if (this.resizeObserver) this.resizeObserver.disconnect();
+    this.$refs.viewport?.removeEventListener('load', this.scheduleScaleUpdate, true);
+    window.removeEventListener('resize', this.scheduleScaleUpdate);
+  },
+  methods: {
+    scheduleScaleUpdate() {
+      if (this.scaleFrame) cancelAnimationFrame(this.scaleFrame);
+      this.scaleFrame = requestAnimationFrame(() => {
+        this.scaleFrame = null;
+        this.updateDocumentScale();
+      });
+    },
+    updateDocumentScale() {
+      const viewport = this.$refs.viewport;
+      const documentPage = this.$refs.document;
+      if (!viewport || !documentPage) return;
+
+      const horizontalPadding = 32;
+      const availableWidth = Math.max(0, viewport.clientWidth - horizontalPadding);
+      const scale = Math.min(1, availableWidth / 760);
+      this.documentScale = Number.isFinite(scale) && scale > 0
+        ? Number(scale.toFixed(4))
+        : 1;
+
+      this.$nextTick(() => {
+        const styles = window.getComputedStyle(viewport);
+        const paddingTop = parseFloat(styles.paddingTop) || 0;
+        const paddingBottom = parseFloat(styles.paddingBottom) || 0;
+        const documentHeight = Math.max(documentPage.scrollHeight, documentPage.offsetHeight);
+        this.viewportHeight = `${Math.ceil(
+          documentHeight * this.documentScale + paddingTop + paddingBottom
+        )}px`;
+      });
     }
   }
 };
 </script>
 
 <style scoped>
-.rich-text-document {
+.rich-text-viewport {
+  display: block;
   width: 100%;
-  overflow-x: auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 16px;
+  background: var(--surface-muted, #f1f5f9);
+  contain: inline-size;
+}
+
+.rich-text-document {
+  display: block;
+  width: 760px;
+  max-width: none;
+  margin: 0 auto;
+  transform: scale(var(--rt-document-scale));
+  transform-origin: top left;
 }
 
 .rich-text-content {
   display: flow-root;
-  width: 100%;
-  max-width: 760px;
+  width: 760px;
+  max-width: none;
   min-height: 1.8em;
   box-sizing: border-box;
   margin: 0 auto;
@@ -84,6 +167,17 @@ export default {
   color: var(--secondary, #C7613C);
   font-weight: 500;
   text-decoration: underline;
+}
+
+.rich-text-content :deep(u) {
+  text-decoration: underline;
+  text-decoration-skip-ink: auto;
+}
+
+.rich-text-content :deep(s),
+.rich-text-content :deep(strike),
+.rich-text-content :deep(del) {
+  text-decoration: line-through;
 }
 
 .rich-text-content :deep(img) {
@@ -199,9 +293,4 @@ export default {
   clear: both;
 }
 
-@media (max-width: 640px) {
-  .rich-text-content {
-    padding: 20px 18px;
-  }
-}
 </style>

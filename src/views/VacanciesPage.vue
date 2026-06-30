@@ -73,10 +73,12 @@ export default {
 
 .vacancies-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
 }
 
 .vacancy-card {
+  min-width: 0;
   padding: clamp(22px, 4vw, 36px);
   background: var(--surface-elevated);
   border: 1px solid var(--border);
