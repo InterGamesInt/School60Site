@@ -6,7 +6,6 @@ const firebaseConfig = {
   apiKey: "AIzaSyBKLQIdkB_8sALmBEzrs22mrYTk8kLkwQw",
   authDomain: "school60-site-db.firebaseapp.com",
   projectId: "school60-site-db",
-  storageBucket: "school60-site-db.firebasestorage.app",
   messagingSenderId: "123456789",
   appId: "1:123456789:web:abcdef"
 };

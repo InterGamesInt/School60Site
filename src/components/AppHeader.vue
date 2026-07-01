@@ -6,8 +6,11 @@
           <img :src="logo" alt="logo">
         </router-link>
         <div class="school-name">
-          <h1>Середня загальноосвітня школа № 60 КРД "Росток" м. Києва</h1>
-          <p>ім. Олександра Загребельного</p>
+          <h1>
+            <span class="school-title-main">Середня загальноосвітня школа № 60 </span>
+            <span class="school-title-gold">ім. Олександра Загребельного</span>
+          </h1>
+          <p>КРД "Росток" м. Києва</p>
         </div>
       </div>
 
@@ -16,7 +19,7 @@
       </button>
 
       <!-- Оверлей (затемнення позаду меню) -->
-      <div class="nav-overlay" v-show="menuOpen" @click="menuOpen = false"></div>
+      <div class="nav-overlay" :class="{ visible: menuOpen }" v-show="menuOpen" @click="menuOpen = false"></div>
 
       <nav
         :class="['main-nav', { open: menuOpen, 'suppress-dropdown-hover': suppressDropdownHover }]"
@@ -25,64 +28,56 @@
         <button class="close-btn" @click="menuOpen = false" aria-label="Закрити меню">✕</button>
 
         <ul class="nav-list">
-          <li><router-link to="/" :class="{ active: $route.path === '/' }" @click="menuOpen = false">Головна</router-link></li>
-          
-          <li class="dropdown" :class="{ open: openDropdown === 'school' }">
-            <a href="#" @click.prevent="toggleDropdown('school')" :class="{ active: isSchoolActive }">Про школу</a>
-            <ul class="dropdown-menu" @click="closeNavigationMenus">
-              <li><router-link to="/team" :class="{ active: $route.path === '/team' }" @click="menuOpen = false">Команда</router-link></li>
-              <li><a href="#">Кафедри</a></li>
-              <li><a href="#">Вакансії</a></li>
-              <li><a href="#">Правила прийому до 1 класу</a></li>
-              <li><a href="#">Кодекс учня</a></li>
-              <li><a href="#">Прозорість та інформаційна відкритість</a></li>
-              <li><a href="#">Статут</a></li>
-              <li><a href="#">Нормативні документи</a></li>
-            </ul>
-          </li>
+          <li
+            v-for="item in visibleNavigation"
+            :key="item.id"
+            :class="{ dropdown: hasChildren(item), open: openDropdown === item.id }"
+          >
+            <template v-if="hasChildren(item)">
+              <a
+                href="#"
+                @click.prevent="toggleDropdown(item.id)"
+                :class="{ active: isDropdownActive(item) }"
+              >
+                {{ item.label }}
+              </a>
+              <ul class="dropdown-menu" @click="closeNavigationMenus">
+                <li v-for="child in item.children" :key="child.id">
+                  <router-link
+                    v-if="isInternalLink(child)"
+                    :to="child.path"
+                    :class="{ active: isActiveItem(child) }"
+                    @click="menuOpen = false"
+                  >
+                    {{ child.label }}
+                  </router-link>
+                  <a
+                    v-else
+                    :href="child.path || child.href || '#'"
+                    @click="handleMenuLinkClick($event, child)"
+                  >
+                    {{ child.label }}
+                  </a>
+                </li>
+              </ul>
+            </template>
 
-          <li class="dropdown" :class="{ open: openDropdown === 'education' }">
-            <a href="#" @click.prevent="toggleDropdown('education')">Виховна робота</a>
-            <ul class="dropdown-menu" @click="closeNavigationMenus">
-              <li><a href="#">Шкільне сьогодення</a></li>
-              <li><a href="#">Школа без булінгу</a></li>
-              <li><a href="#">Практичний психолог</a></li>
-              <li><a href="#">Соціальний педагог</a></li>
-              <li><a href="#">Домашнє насильство</a></li>
-              <li><a href="#">Учнівське самоврядування</a></li>
-              <li><a href="#">Безпека життєдіяльності</a></li>
-            </ul>
-          </li>
-
-          <li class="dropdown" :class="{ open: openDropdown === 'study' }">
-            <a href="#" @click.prevent="toggleDropdown('study')">Навчання</a>
-            <ul class="dropdown-menu" @click="closeNavigationMenus">
-              <li><a href="#">Освітні програми 1-4 кл.</a></li>
-              <li><a href="#">Освітні програми 5-9 кл.</a></li>
-              <li><a href="#">Розклад</a></li>
-              <li><a href="#">Структура навчального року</a></li>
-              <li><a href="#">Критерії оцінювання</a></li>
-            </ul>
-          </li>
-
-          <li><router-link to="/news" @click="menuOpen = false">Харчування</router-link></li>
-
-          <li class="dropdown" :class="{ open: openDropdown === 'news' }">
-            <a href="#" @click.prevent="toggleDropdown('news')" :class="{ active: isNewsActive }">Новини</a>
-            <ul class="dropdown-menu" @click="closeNavigationMenus">
-              <li><router-link to="/announcements" :class="{ active: $route.path === '/announcements' }" @click="menuOpen = false">Оголошення</router-link></li>
-              <li><router-link to="/news" :class="{ active: $route.path === '/news' }" @click="menuOpen = false">Новини</router-link></li>
-            </ul>
-          </li>
-
-          <li class="dropdown" :class="{ open: openDropdown === 'feedback' }">
-            <a href="#" @click.prevent="toggleDropdown('feedback')" :class="{ active: isFeedbackActive }">Зворотній зв'язок</a>
-            <ul class="dropdown-menu" @click="closeNavigationMenus">
-              <li><router-link to="/contacts" :class="{ active: $route.path === '/contacts' }" @click="menuOpen = false">Контакти</router-link></li>
-              <li><router-link to="/survey-student" :class="{ active: $route.path === '/survey-student' }" @click="menuOpen = false">Анкета учня/учениці</router-link></li>
-              <li><router-link to="/survey-parents" :class="{ active: $route.path === '/survey-parents' }" @click="menuOpen = false">Анкета для батьків</router-link></li>
-              <li><router-link to="/survey-teachers" :class="{ active: $route.path === '/survey-teachers' }" @click="menuOpen = false">Анкета для вчителів</router-link></li>
-            </ul>
+            <router-link
+              v-else-if="isInternalLink(item)"
+              :to="item.path"
+              :class="{ active: isActiveItem(item) }"
+              @click="menuOpen = false"
+            >
+              {{ item.label }}
+            </router-link>
+            <a
+              v-else
+              :href="item.path || item.href || '#'"
+              :class="{ active: isActiveItem(item) }"
+              @click="handleMenuLinkClick($event, item)"
+            >
+              {{ item.label }}
+            </a>
           </li>
         </ul>
       </nav>
@@ -92,27 +87,49 @@
 
 <script>
 import logo from '../assets/logo.png'
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
+import { defaultNavigation, mergeNavigationVisibility } from '../data/defaultNavigation';
 
 export default {
   name: 'AppHeader',
   data() {
     return {
       logo,
+      navigation: mergeNavigationVisibility(defaultNavigation),
       menuOpen: false,
       openDropdown: null,
-      suppressDropdownHover: false
+      suppressDropdownHover: false,
+      unsubscribeNavigation: null
     };
   },
   computed: {
-    isSchoolActive() {
-      const schoolRoutes = ['/team'];
-      return schoolRoutes.includes(this.$route.path);
-    },
-    isNewsActive() {
-      return ['/announcements', '/news'].includes(this.$route.path);
-    },
-    isFeedbackActive() {
-      return ['/contacts', '/survey-student', '/survey-parents', '/survey-teachers'].includes(this.$route.path);
+    visibleNavigation() {
+      return this.navigation
+        .filter(item => item.visible !== false)
+        .map(item => ({
+          ...item,
+          children: item.children?.filter(child => child.visible !== false) || []
+        }))
+        .filter(item => item.path || item.href || item.children.length > 0);
+    }
+  },
+  mounted() {
+    this.unsubscribeNavigation = onSnapshot(
+      doc(db, 'siteSettings', 'navigation'),
+      (snapshot) => {
+        const savedItems = snapshot.exists() ? snapshot.data().items : [];
+        this.navigation = mergeNavigationVisibility(defaultNavigation, savedItems);
+      },
+      (error) => {
+        console.error('Navigation settings loading error:', error);
+        this.navigation = mergeNavigationVisibility(defaultNavigation);
+      }
+    );
+  },
+  beforeUnmount() {
+    if (this.unsubscribeNavigation) {
+      this.unsubscribeNavigation();
     }
   },
   watch: {
@@ -123,6 +140,24 @@ export default {
     }
   },
   methods: {
+    hasChildren(item) {
+      return Array.isArray(item.children) && item.children.length > 0;
+    },
+    isInternalLink(item) {
+      return typeof item.path === 'string' && item.path.startsWith('/') && item.path !== '#';
+    },
+    isActiveItem(item) {
+      return this.isInternalLink(item) && this.$route.path === item.path;
+    },
+    isDropdownActive(item) {
+      return this.hasChildren(item) && item.children.some(child => this.isActiveItem(child));
+    },
+    handleMenuLinkClick(event, item) {
+      if ((item.path || item.href || '#') === '#') {
+        event.preventDefault();
+      }
+      this.menuOpen = false;
+    },
     toggleDropdown(name) {
       this.suppressDropdownHover = false;
       if (this.openDropdown === name) {
@@ -238,21 +273,31 @@ export default {
 }
 
 .school-name h1 {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 900;
   margin: 0;
   color: var(--primary, #2F5F48);
   letter-spacing: -0.3px;
-  background: linear-gradient(135deg, var(--primary, #2F5F48) 0%, var(--primary-dark, #1a4032) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+}
+
+.school-title-main,
+.school-title-gold {
+  display: inline;
+}
+
+.school-title-main {
+  color: var(--primary, #2F5F48);
+}
+
+.school-title-gold {
+  color: #c9a227;
+  text-shadow: 0 1px 2px rgba(201, 162, 39, 0.18);
 }
 
 .school-name p {
-  font-size: 16px;
+  font-size: 18px;
   margin: 2px 0 0 0;
-  color: var(--secondary, #C7613C);
+  color: var(--text-primary, #334155);
   font-weight: 500;
   text-align: left;
   letter-spacing: 0.3px;
@@ -530,7 +575,7 @@ export default {
     opacity: 0;
     pointer-events: none; /* щоб кліки не заважали, поки приховано */
   }
-  .nav-overlay[v-show="true"] {
+  .nav-overlay.visible {
     opacity: 1;
     pointer-events: auto;
   }
@@ -661,7 +706,6 @@ export default {
   }
   .school-name h1 {
     font-size: 15px;
-    -webkit-text-fill-color: var(--primary, #2F5F48);
     background: none;
   }
   .school-name p {

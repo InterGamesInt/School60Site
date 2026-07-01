@@ -32,44 +32,23 @@
               alt="Instagram"
             />
           </a>
-          <a
-            href="https://www.tiktok.com/@wix"
-            target="_blank"
-            aria-label="TikTok"
-            class="social-link tiktok"
-          >
-            <!-- Замініть на дійсний URL або використовуйте SVG -->
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/3046/3046126.png"
-              alt="TikTok"
-            />
-          </a>
         </div>
 
         <!-- Контакти -->
         <div class="footer-contact">
-          <p class="contact-item">
+          <a href="https://maps.app.goo.gl/QekuKHnTLN132hdo7" target="_blank" class="contact-item">
             <span class="contact-icon">📍</span>
             вулиця Романа Ратушного, 1/2, Київ, Україна, 03110
-          </p>
-          <a href="mailto:school60kiev@gmail.com" class="contact-item">
+          </a>
+          <a href="mailto:60school@kyivcity.gov.ua" class="contact-item">
             <span class="contact-icon">✉️</span>
-            school60kiev@gmail.com
+            60school@kyivcity.gov.ua
           </a>
           <p class="contact-item">
             <span class="contact-icon">📞</span>
-            +380 (12) 345-67-89
+            <a href="tel:+380442755191">+38 (044) 275-51-91</a>,
+            <a href="tel:+380442757454">+38 (044) 275-74-54</a>
           </p>
-        </div>
-
-        <!-- Посилання -->
-        <div class="footer-links">
-          <ul>
-            <li><a href="#">Політика конфіденційності</a></li>
-            <li><a href="#">Заява про доступність</a></li>
-            <li><a href="#">Умови й положення</a></li>
-            <li><a href="#">Правила повернення коштів</a></li>
-          </ul>
         </div>
       </div>
 

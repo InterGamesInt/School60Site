@@ -21,6 +21,11 @@
       <EmployeesManager v-if="activeTab === 'employees'" />
       <AnnouncementsManager v-if="activeTab === 'announcements'" />
       <NewsManager v-if="activeTab === 'news'" />
+      <NavigationManager v-if="activeTab === 'navigation'" />
+      <SchoolDocumentsManager v-if="activeTab === 'school-documents'" />
+      <SiteLinksManager v-if="activeTab === 'site-links'" />
+      <VacanciesManager v-if="activeTab === 'vacancies'" />
+      <InformationPagesManager v-if="activeTab === 'specialists'" />
     </div>
   </div>
 </template>
@@ -32,9 +37,24 @@ import UsersManager from '../components/admin/UsersManager.vue';
 import EmployeesManager from '../components/admin/EmployeesManager.vue';
 import AnnouncementsManager from '../components/admin/AnnouncementsManager.vue';
 import NewsManager from '../components/admin/NewsManager.vue';
+import NavigationManager from '../components/admin/NavigationManager.vue';
+import SchoolDocumentsManager from '../components/admin/SchoolDocumentsManager.vue';
+import SiteLinksManager from '../components/admin/SiteLinksManager.vue';
+import VacanciesManager from '../components/admin/VacanciesManager.vue';
+import InformationPagesManager from '../components/admin/InformationPagesManager.vue';
 
 export default {
-  components: { UsersManager, EmployeesManager, AnnouncementsManager, NewsManager },
+  components: {
+    UsersManager,
+    EmployeesManager,
+    AnnouncementsManager,
+    NewsManager,
+    NavigationManager,
+    SchoolDocumentsManager,
+    SiteLinksManager,
+    VacanciesManager,
+    InformationPagesManager
+  },
   data() {
     return {
       activeTab: 'news',
@@ -42,7 +62,12 @@ export default {
         { id: 'users', name: 'Користувачі' },
         { id: 'employees', name: 'Команда' },
         { id: 'announcements', name: 'Оголошення' },
-        { id: 'news', name: 'Новини' }
+        { id: 'news', name: 'Новини' },
+        { id: 'navigation', name: 'Навігація' },
+        { id: 'school-documents', name: 'Документація' },
+        { id: 'site-links', name: 'Посилання' },
+        { id: 'vacancies', name: 'Вакансії' },
+        { id: 'specialists', name: 'Психолог і соцпедагог' }
       ]
     };
   },
